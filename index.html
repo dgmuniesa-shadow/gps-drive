@@ -1,1222 +1,292 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#070a10">
-<title>GPS DRIVE | Performance System</title>
-
-<style>
-:root {
-  --bg:#070a10;
-  --panel:#0d1622;
-  --blue:#087cff;
-  --violet:#8050e4;
-  --red:#f12c4b;
-  --muted:#71849b;
-  --white:#f4f7fc;
-  --green:#50e59a;
-}
-
-* {box-sizing:border-box}
-
-html,body {
-  margin:0;
-  min-height:100%;
-  background:#070a10;
-  color:var(--white);
-  font-family:"Arial Narrow","Bahnschrift","Avenir Next Condensed",Impact,sans-serif;
-}
-
-body {
-  background:
-    radial-gradient(ellipse at 50% 5%,#17263b 0%,#080d16 48%,#05080d 100%);
-}
-
-button,input {font:inherit}
-
-.app {
-  width:100%;
-  max-width:900px;
-  min-height:100vh;
-  margin:auto;
-  padding:20px 17px;
-  position:relative;
-  isolation:isolate;
-  overflow:hidden;
-}
-
-.background-mark {
-  position:absolute;
-  z-index:-1;
-  top:150px;
-  left:50%;
-  transform:translateX(-50%) skew(-12deg);
-  white-space:nowrap;
-  font-family:Arial Black,sans-serif;
-  font-size:clamp(220px,48vw,440px);
-  font-weight:900;
-  font-style:italic;
-  letter-spacing:-.14em;
-  color:rgba(140,155,180,.035);
-  pointer-events:none;
-}
-
-.background-mark span {
-  color:rgba(10,115,255,.06);
-}
-
-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:20px;
-}
-
-.logo {line-height:.8}
-
-.logo-gps {
-  font-size:23px;
-  font-weight:900;
-  font-style:italic;
-  letter-spacing:.15em;
-}
-
-.logo-drive {
-  color:#1688ff;
-  font-size:48px;
-  font-weight:900;
-  font-style:italic;
-  letter-spacing:.02em;
-  text-shadow:0 0 20px #087cff55;
-}
-
-.logo-sub {
-  margin-top:7px;
-  font-size:9px;
-  color:#8292a8;
-  letter-spacing:.25em;
-}
-
-.gps-status {
-  color:#e65b70;
-  font-size:10px;
-  font-weight:900;
-  letter-spacing:.1em;
-  text-align:right;
-}
-
-.gps-status i,
-.live i {
-  display:inline-block;
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:#e83d50;
-  margin-right:5px;
-  box-shadow:0 0 9px #e83d50;
-}
-
-.gps-status.connected {color:var(--green)}
-.gps-status.connected i {background:var(--green)}
-
-.tabs {
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:6px;
-  margin-bottom:15px;
-}
-
-.tab {
-  border:1px solid #24415e;
-  background:linear-gradient(120deg,#101b29,#09111b);
-  color:#8294aa;
-  padding:12px 3px;
-  font-size:12px;
-  font-weight:900;
-  letter-spacing:.1em;
-  clip-path:polygon(7% 0,100% 0,93% 100%,0 100%);
-  cursor:pointer;
-}
-
-.tab.active {
-  color:white;
-  background:linear-gradient(105deg,#087cff,#4056d5 65%,#963eac);
-  border-color:#168bff;
-  box-shadow:0 0 18px #087cff45;
-}
-
-.page {display:none}
-.page.active {display:block}
-
-.panel {
-  background:linear-gradient(145deg,rgba(17,29,44,.97),rgba(7,13,22,.98));
-  border:1px solid #20364e;
-  box-shadow:inset 0 0 24px #0b1b2c55,0 8px 24px #0005;
-  position:relative;
-}
-
-.angular {
-  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
-}
-
-.dashboard {
-  display:grid;
-  grid-template-columns:minmax(0,2.2fr) minmax(150px,.9fr);
-  gap:10px;
-}
-
-.speed-panel {
-  padding:15px 14px 12px;
-  border-left:2px solid var(--blue);
-  min-width:0;
-}
-
-.speed-panel:after,
-.test-panel:after {
-  content:"";
-  position:absolute;
-  bottom:0;
-  right:0;
-  height:2px;
-  width:38%;
-  background:linear-gradient(90deg,var(--violet),var(--red));
-}
-
-.panel-top {
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-}
-
-.eyebrow {
-  font-size:9px;
-  color:#71869f;
-  font-weight:900;
-  letter-spacing:.19em;
-}
-
-h2 {
-  font-size:26px;
-  font-style:italic;
-  font-weight:900;
-  margin:4px 0;
-  letter-spacing:.04em;
-}
-
-.live {
-  font-size:9px;
-  font-weight:900;
-  color:var(--green);
-  margin-top:9px;
-  white-space:nowrap;
-}
-
-.live i {
-  background:var(--green);
-  box-shadow:0 0 8px var(--green);
-}
-
-.scale {
-  display:flex;
-  justify-content:space-between;
-  padding:0 2%;
-  color:#8799af;
-  font-size:11px;
-  font-weight:800;
-  margin-top:12px;
-}
-
-.gauge {
-  display:block;
-  width:100%;
-  height:auto;
-  overflow:visible;
-}
-
-#speedNumber {
-  font-size:76px;
-  font-weight:900;
-  font-style:italic;
-  fill:white;
-  letter-spacing:-.04em;
-}
-
-.gauge-unit {
-  fill:#168bff;
-  font-size:17px;
-  font-weight:900;
-  letter-spacing:.2em;
-}
-
-.gauge-caption {
-  display:flex;
-  justify-content:space-between;
-  color:#647991;
-  font-size:9px;
-  letter-spacing:.13em;
-  margin-top:-2px;
-}
-
-.gauge-footer {
-  display:flex;
-  justify-content:space-between;
-  border-top:1px solid #25384c;
-  margin-top:12px;
-  padding-top:10px;
-}
-
-.gauge-footer div {
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
-
-.gauge-footer small {
-  color:#7388a0;
-  font-size:9px;
-  letter-spacing:.17em;
-}
-
-.gauge-footer strong {
-  font-size:11px;
-}
-
-.right {text-align:right}
-
-.limit-panel {
-  padding:16px 12px;
-  border-right:2px solid var(--red);
-  min-width:0;
-}
-
-.limit-panel h3 {
-  font-size:17px;
-  line-height:1;
-  font-style:italic;
-  margin:14px 0 13px;
-}
-
-.limit-number {
-  font-size:clamp(48px,8vw,76px);
-  font-weight:900;
-  font-style:italic;
-  line-height:.95;
-  letter-spacing:-.04em;
-}
-
-.limit-unit {
-  color:#168bff;
-  font-size:13px;
-  font-weight:900;
-  letter-spacing:.2em;
-  margin-top:5px;
-}
-
-.limit-status {
-  color:var(--green);
-  font-size:9px;
-  font-weight:900;
-  margin-top:20px;
-  line-height:1.4;
-}
-
-.limit-status.exceeded {color:#ff4058}
-
-.meter {
-  display:flex;
-  gap:3px;
-  margin-top:12px;
-}
-
-.meter i {
-  flex:1;
-  height:5px;
-  background:linear-gradient(90deg,#087cff,#8050e4,#f12c4b);
-}
-
-.stats {
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:8px;
-  margin-top:10px;
-}
-
-.stat {
-  padding:11px 8px;
-  min-width:0;
-}
-
-.stat:nth-child(2) {border-bottom:2px solid #9a3454}
-
-.stat-label {
-  display:block;
-  color:#8597ad;
-  font-size:9px;
-  font-weight:900;
-  letter-spacing:.12em;
-}
-
-.stat-value {
-  display:block;
-  font-size:clamp(22px,5vw,35px);
-  font-style:italic;
-  font-weight:900;
-  margin-top:5px;
-  white-space:nowrap;
-  letter-spacing:-.03em;
-}
-
-.stat-unit {
-  color:#607994;
-  font-size:9px;
-  letter-spacing:.15em;
-}
-
-.buttons {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:9px;
-  margin-top:11px;
-}
-
-.btn {
-  padding:13px 7px;
-  border:1px solid #1685ff;
-  background:linear-gradient(105deg,#087cff,#354fd2 70%,#7e3eaa);
-  color:white;
-  font-size:12px;
-  font-weight:900;
-  letter-spacing:.13em;
-  cursor:pointer;
-  box-shadow:0 0 15px #087cff30;
-}
-
-.btn.secondary {
-  background:linear-gradient(120deg,#111d2b,#0b111b);
-  border-color:#294765;
-  color:#aab9cc;
-  box-shadow:none;
-}
-
-.btn:disabled {opacity:.4}
-
-.test-panel {
-  margin-top:11px;
-  padding:14px 15px 12px;
-  border-left:2px solid var(--blue);
-}
-
-.test-title {
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-}
-
-.test-title h3 {
-  display:inline-block;
-  font-size:19px;
-  font-style:italic;
-  margin:0 0 3px 7px;
-}
-
-.test-title small {
-  display:block;
-  font-size:9px;
-  color:#778da5;
-  letter-spacing:.16em;
-}
-
-.test-title .code {
-  color:#e45b85;
-  font-size:10px;
-  letter-spacing:.14em;
-}
-
-.test-controls {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-top:13px;
-}
-
-.test-speed {
-  font-size:24px;
-  font-weight:900;
-  font-style:italic;
-}
-
-.test-speed small {
-  color:#168bff;
-  font-size:10px;
-}
-
-#testSpeed {
-  appearance:none;
-  display:block;
-  width:100%;
-  height:6px;
-  margin:17px 0 7px;
-  border-radius:0;
-  background:linear-gradient(90deg,#087cff,#8050e4,#f12c4b);
-  outline:none;
-}
-
-#testSpeed::-webkit-slider-thumb {
-  appearance:none;
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  background:white;
-  border:3px solid #168bff;
-  box-shadow:0 0 10px #168bff;
-}
-
-#testSpeed::-moz-range-thumb {
-  width:12px;
-  height:12px;
-  border-radius:50%;
-  background:white;
-  border:3px solid #168bff;
-}
-
-.range-labels {
-  display:flex;
-  justify-content:space-between;
-  color:#71869e;
-  font-size:9px;
-}
-
-.test-status {
-  margin-top:10px;
-  color:#e05b71;
-  font-size:10px;
-  font-weight:900;
-  letter-spacing:.12em;
-}
-
-.test-status.enabled {color:var(--green)}
-
-footer {
-  display:flex;
-  justify-content:center;
-  gap:8px;
-  margin-top:17px;
-  color:#71869d;
-  font-size:9px;
-  letter-spacing:.16em;
-}
-
-footer span {color:#46617f}
-footer b {color:#168bff}
-
-.sub-panel {
-  padding:20px;
-  min-height:300px;
-}
-
-.sub-panel h2 {margin:7px 0 20px}
-
-.lap-clock {
-  text-align:center;
-  font-size:clamp(48px,12vw,82px);
-  font-style:italic;
-  font-weight:900;
-  margin:25px 0;
-}
-
-.lap-buttons {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:7px;
-}
-
-.data-list {
-  margin-top:20px;
-  border-top:1px solid #26394d;
-}
-
-.data-row {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:11px 3px;
-  border-bottom:1px solid #1b2b3e;
-  font-size:12px;
-  gap:8px;
-}
-
-.empty {
-  color:#71849b;
-  font-size:12px;
-}
-
-.coordinates {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
-  margin:20px 0;
-}
-
-.coordinates div {
-  background:#091421;
-  border:1px solid #243a52;
-  padding:12px 8px;
-  min-width:0;
-}
-
-.coordinates small {
-  display:block;
-  color:#71869e;
-  font-size:9px;
-}
-
-.coordinates strong {
-  display:block;
-  font-size:13px;
-  margin-top:7px;
-  overflow-wrap:anywhere;
-}
-
-.setting-label {
-  display:block;
-  color:#9aacc0;
-  font-size:12px;
-  margin:18px 0 8px;
-}
-
-#speedLimit {
-  width:100%;
-  background:#08111c;
-  border:1px solid #294765;
-  color:white;
-  padding:12px;
-  font-size:20px;
-  margin-bottom:15px;
-}
-
-@media(max-width:520px) {
-  .app {padding:15px 10px}
-  .logo-drive {font-size:42px}
-  .logo-gps {font-size:20px}
-  .dashboard {
-    grid-template-columns:minmax(0,1.8fr) minmax(120px,.85fr);
-    gap:7px;
-  }
-  .speed-panel {padding:12px 9px 10px}
-  .limit-panel {padding:13px 9px}
-  h2 {font-size:22px}
-  .limit-panel h3 {font-size:14px}
-  .limit-number {font-size:clamp(43px,12vw,58px)}
-  .limit-status {font-size:8px}
-  .stats {gap:5px}
-  .stat {padding:9px 5px}
-  .stat-label {font-size:8px}
-  .stat-value {font-size:clamp(20px,6vw,28px)}
-  .stat-unit {font-size:8px}
-  .gauge-footer strong {font-size:9px}
-  .gauge-footer small {font-size:8px}
-  .live {font-size:8px}
-  .coordinates {grid-template-columns:1fr}
-}
-
-@media(max-width:360px) {
-  .gps-status {font-size:8px}
-  .tab {font-size:10px}
-  .limit-number {font-size:42px}
-  .speed-panel {padding-left:7px;padding-right:7px}
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#020814">
+  <title>GPS DRIVE</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+  <main class="static-art" aria-label="GPS DRIVE Performance System">
+    <svg class="artboard" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="art-title art-description">
+      <title id="art-title">GPS DRIVE Performance System</title>
+      <desc id="art-description">Velocímetro, límite de velocidad, estadísticas del recorrido y modo de pruebas con estética de competición.</desc>
+      <defs>
+        <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#020812"/><stop offset=".52" stop-color="#03152b"/><stop offset="1" stop-color="#020711"/></linearGradient>
+        <radialGradient id="blueAtmosphere" cx=".15" cy="0" r=".78"><stop stop-color="#064078" stop-opacity=".62"/><stop offset="1" stop-color="#020812" stop-opacity="0"/></radialGradient>
+        <linearGradient id="speedBand" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#00d7ff"/><stop offset=".39" stop-color="#0877ff"/><stop offset=".68" stop-color="#a121ff"/><stop offset="1" stop-color="#ff2441"/></linearGradient>
+        <linearGradient id="activeTab" x1="0" y1="0" x2="1" y2=".35"><stop stop-color="#09b3ff"/><stop offset=".57" stop-color="#075be8"/><stop offset="1" stop-color="#f3295a"/></linearGradient>
+        <linearGradient id="blueButton" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#0baaff"/><stop offset=".69" stop-color="#075be8"/><stop offset="1" stop-color="#063b83"/></linearGradient>
+        <linearGradient id="darkButton" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#082442"/><stop offset="1" stop-color="#05244b"/></linearGradient>
+        <linearGradient id="frameEdge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#05e6ff"/><stop offset=".57" stop-color="#087fff"/><stop offset="1" stop-color="#ff2b4b"/></linearGradient>
+        <linearGradient id="testEdge" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#05eaff"/><stop offset=".76" stop-color="#087bff"/><stop offset="1" stop-color="#ff2948"/></linearGradient>
+        <linearGradient id="tileBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#081d36"/><stop offset="1" stop-color="#020b19"/></linearGradient>
+        <linearGradient id="tileRed" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#141727"/><stop offset="1" stop-color="#080b18"/></linearGradient>
+        <linearGradient id="sliderBar" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#008fff"/><stop offset=".43" stop-color="#3150f3"/><stop offset=".71" stop-color="#a321ff"/><stop offset="1" stop-color="#ff2949"/></linearGradient>
+        <pattern id="carbon" width="10" height="10" patternTransform="rotate(42)" patternUnits="userSpaceOnUse"><path d="M0 0V10" stroke="#8499b2" stroke-opacity=".1" stroke-width="1"/></pattern>
+        <pattern id="fineCarbon" width="14" height="14" patternTransform="rotate(42)" patternUnits="userSpaceOnUse"><path d="M0 0V14" stroke="#9bacc0" stroke-opacity=".055" stroke-width="2"/></pattern>
+        <filter id="blueGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="redGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="signalGlow" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="deepShadow" x="-20%" y="-20%" width="140%" height="150%"><feGaussianBlur in="SourceAlpha" stdDeviation="10"/><feOffset dy="6"/><feComponentTransfer><feFuncA type="linear" slope=".55"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <clipPath id="speedPanelClip"><path d="M40 256 82 215H1117V424L1081 460H78L40 423Z"/></clipPath>
+        <clipPath id="limitPanelClip"><path d="M1140 274 1168 246H1550L1574 270V402L1546 430H1166L1140 404Z"/></clipPath>
+        <clipPath id="tileOneClip"><path d="M42 491 59 474H390L407 491V543L390 560H59L42 543Z"/></clipPath>
+        <clipPath id="tileTwoClip"><path d="M428 491 445 474H754L771 491V543L754 560H445L428 543Z"/></clipPath>
+        <clipPath id="tileThreeClip"><path d="M792 491 809 474H1119L1136 491V543L1119 560H809L792 543Z"/></clipPath>
+        <clipPath id="tileFourClip"><path d="M1157 491 1174 474H1515L1532 492V543L1515 560H1174L1157 543Z"/></clipPath>
+        <clipPath id="testPanelClip"><path d="M41 659 64 636H1512L1558 682V745L1536 768H64L41 745Z"/></clipPath>
+      </defs>
 
-<div class="app">
-  <div class="background-mark"><span>///</span>M</div>
+      <!-- Dark navy carbon-fiber field and the large slanted motorsport insignia -->
+      <rect width="1600" height="800" fill="url(#background)"/>
+      <rect width="1600" height="800" fill="url(#blueAtmosphere)"/>
+      <path d="M0 0H620L172 454H0Z" fill="#0879ee" opacity=".09"/>
+      <path d="M320 0H546L0 546V375Z" fill="#087eff" opacity=".055"/>
+      <path d="M998 0H1300L510 800H310Z" fill="#12294a" opacity=".2"/>
+      <path d="M1550 0H1600V800H1110Z" fill="#8b102d" opacity=".105"/>
+      <rect width="1600" height="800" fill="url(#carbon)" opacity=".54"/>
+      <rect width="1600" height="800" fill="url(#fineCarbon)" opacity=".32"/>
+      <g transform="skewX(-37)" opacity=".78">
+        <path d="M625 112H810L690 324H505Z" fill="#087aff" opacity=".44"/>
+        <path d="M838 112H1022L902 324H718Z" fill="#3938b5" opacity=".46"/>
+        <path d="M1050 112H1232L1114 324H933Z" fill="#d31a3a" opacity=".4"/>
+        <path d="M1262 112H1444V376H1164Z" fill="#8090a4" opacity=".22"/>
+      </g>
+      <path d="M1200 520 1598 91" stroke="#ff173c" stroke-opacity=".65" stroke-width="2"/>
+      <path d="M1276 800 1598 456" stroke="#058fff" stroke-opacity=".56" stroke-width="3"/>
+      <path d="M1355 800 1598 538" stroke="#0788ff" stroke-opacity=".24" stroke-width="1"/>
 
-  <header>
-    <div class="logo">
-      <div class="logo-gps">GPS</div>
-      <div class="logo-drive">DRIVE</div>
-      <div class="logo-sub">PERFORMANCE SYSTEM</div>
-    </div>
-    <div class="gps-status" id="gpsStatus">
-      <i></i> GPS DESCONECTADO
-    </div>
-  </header>
+      <!-- Brand and disconnected GPS lamp -->
+      <text x="70" y="27" class="brand-top">GPS</text>
+      <text x="58" y="66" class="brand-main">DRIVE</text>
+      <text x="60" y="91" class="brand-foot">PERFORMANCE SYSTEM</text>
+      <g id="gpsStatus" class="gps-status is-disconnected" aria-live="polite">
+        <circle class="status-lamp" cx="1260" cy="28" r="12" fill="#ff173d" filter="url(#signalGlow)"/>
+        <circle cx="1257" cy="24" r="4" fill="#ffbac4" opacity=".8"/>
+        <text id="gpsStatusText" x="1291" y="38">GPS DESCONECTADO</text>
+      </g>
 
-  <nav class="tabs">
-    <button class="tab active" data-page="drive">DRIVE</button>
-    <button class="tab" data-page="laps">LAP TIME</button>
-    <button class="tab" data-page="gps">GPS</button>
-    <button class="tab" data-page="settings">AJUSTES</button>
-  </nav>
+      <!-- Four slanted navigation panels -->
+      <g class="nav-type" aria-label="Navegación principal">
+        <g id="tab-drive" class="nav-tab interactive is-active" data-page="drive" role="button" tabindex="0" aria-label="Drive">
+          <path d="M49 139H460L424 194H20Z" fill="url(#activeTab)" stroke="#0cbcff" stroke-width="2" filter="url(#blueGlow)"/>
+          <text x="240" y="175" text-anchor="middle">DRIVE</text>
+        </g>
+        <g id="tab-laps" class="nav-tab interactive" data-page="laps" role="button" tabindex="0" aria-label="Lap Time">
+          <path d="M480 139H850L814 194H444Z" fill="#030b19" fill-opacity=".96" stroke="#1c4e78" stroke-width="2"/>
+          <text x="647" y="175" text-anchor="middle">LAP TIME</text>
+        </g>
+        <g id="tab-gps" class="nav-tab interactive" data-page="gps" role="button" tabindex="0" aria-label="GPS">
+          <path d="M870 139H1238L1202 194H834Z" fill="#030b19" fill-opacity=".96" stroke="#1c4e78" stroke-width="2"/>
+          <text x="1037" y="175" text-anchor="middle">GPS</text>
+        </g>
+        <g id="tab-settings" class="nav-tab interactive" data-page="settings" role="button" tabindex="0" aria-label="Ajustes">
+          <path d="M1258 139H1573L1537 194H1222Z" fill="#030b19" fill-opacity=".96" stroke="#1c4e78" stroke-width="2"/>
+          <text x="1397" y="175" text-anchor="middle">AJUSTES</text>
+        </g>
+      </g>
 
-  <main>
-    <section class="page active" id="drive">
+      <!-- Angled speed instrument housing -->
+      <g id="view-drive" class="svg-view">
+      <path d="M40 256 82 215H1117V424L1081 460H78L40 423Z" fill="#020d1c" fill-opacity=".95" stroke="url(#frameEdge)" stroke-width="3" filter="url(#deepShadow)"/>
+      <g clip-path="url(#speedPanelClip)">
+        <rect x="40" y="215" width="1080" height="245" fill="url(#carbon)" opacity=".12"/>
+        <path d="M40 272H1117" stroke="#124b74" stroke-width="1.4"/>
+        <path d="M40 423 78 460H1081L1117 424" fill="none" stroke="#087aff" stroke-opacity=".52" stroke-width="2"/>
+        <path d="M40 256 82 215" stroke="#00dcff" stroke-width="4" filter="url(#blueGlow)"/>
+        <path d="M1081 460 1117 424" stroke="#ff2546" stroke-width="4" filter="url(#redGlow)"/>
+        <text x="99" y="260" class="panel-title">VELOCIDAD</text>
+        <circle id="liveLamp" cx="922" cy="235" r="10" fill="#00f096" filter="url(#signalGlow)"/>
+        <text id="liveLabel" x="951" y="245" class="live-text">LIVE DATA</text>
+        <!-- Fixed-thickness profile; the JS reveals its fill along this same polygon. -->
+        <path id="gaugeTrack" d="M132 377 440 282H1067L1044 318H445L143 422Z" fill="#162c44" stroke="#243a52" stroke-width="2"/>
+        <path id="gaugeFill" d="" fill="url(#speedBand)" stroke="#18caff" stroke-width="3.4" filter="url(#blueGlow)"/>
+        <g id="gaugeTicks" class="gauge-ticks" stroke="#f4f7fd" stroke-width="3"></g>
+        <g id="gaugeLabels" class="gauge-labels"></g>
+        <text id="speedNumber" x="601" y="399" text-anchor="middle" class="speed-value">0</text>
+        <text x="601" y="421" text-anchor="middle" class="speed-unit">KM/H</text>
+        <text x="88" y="403" class="meta-label">GPS SPEED</text>
+        <text x="1070" y="403" text-anchor="end" class="meta-label">MAX <tspan id="maxInline">0</tspan> KM/H</text>
+        <path d="M83 428H1080" stroke="#173b58" stroke-width="1.3"/>
+        <text x="88" y="447" class="meta-label">SPEED SYSTEM</text>
+        <text x="1070" y="447" text-anchor="end" class="meta-label">PRECISIÓN <tspan id="accuracy">--</tspan></text>
+      </g>
 
-      <div class="dashboard">
+      <!-- Red edged speed limit housing -->
+      <path d="M1140 274 1168 246H1550L1574 270V402L1546 430H1166L1140 404Z" fill="#031125" fill-opacity=".97" stroke="#ff3450" stroke-width="3" filter="url(#deepShadow)"/>
+      <g clip-path="url(#limitPanelClip)">
+        <rect x="1140" y="246" width="435" height="184" fill="url(#carbon)" opacity=".12"/>
+        <text x="1180" y="284" class="limit-title">LÍMITE DE VELOCIDAD</text>
+        <text id="limitValue" x="1194" y="361" class="limit-number">120</text>
+        <text x="1408" y="350" class="limit-unit">KM/H</text>
+        <text id="limitStatus" x="1180" y="404" class="limit-warning is-ok">LÍMITE OK</text>
+        <g id="limitMeter" class="limit-meter" transform="skewX(-15)" role="meter" aria-label="Velocidad actual">
+          <rect class="meter-segment" x="1195" y="415" width="37" height="10" fill="#04afff"/><rect class="meter-segment" x="1237" y="415" width="37" height="10" fill="#087aff"/>
+          <rect class="meter-segment" x="1279" y="415" width="37" height="10" fill="#3445ff"/><rect class="meter-segment" x="1321" y="415" width="37" height="10" fill="#8125ff"/>
+          <rect class="meter-segment" x="1363" y="415" width="37" height="10" fill="#c820e8"/><rect class="meter-segment" x="1405" y="415" width="37" height="10" fill="#f0229b"/>
+          <rect class="meter-segment" x="1447" y="415" width="37" height="10" fill="#fa205d"/><rect class="meter-segment" x="1489" y="415" width="37" height="10" fill="#ff2444"/>
+        </g>
+      </g>
 
-        <article class="panel angular speed-panel">
-          <div class="panel-top">
-            <div>
-              <div class="eyebrow">GPS DRIVE / PERFORMANCE</div>
-              <h2>VELOCIDAD</h2>
-            </div>
-            <div class="live"><i></i> LIVE DATA</div>
-          </div>
+      <!-- Performance statistics -->
+      <g>
+        <path d="M42 491 59 474H390L407 491V543L390 560H59L42 543Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
+        <g clip-path="url(#tileOneClip)"><path d="M286 560 413 495V563Z" fill="#087aff" opacity=".12"/><path d="m321 560 92-65" stroke="#148bff" stroke-opacity=".3" stroke-width="2"/></g>
+        <text x="88" y="501" class="stat-title">MEDIA</text><text id="average" x="88" y="536" class="stat-number">0</text><text x="88" y="555" class="stat-unit">KM/H</text>
 
-          <div class="scale">
-            <span>0</span><span>100</span><span>200</span><span>300</span>
-          </div>
+        <path d="M428 491 445 474H754L771 491V543L754 560H445L428 543Z" fill="url(#tileBlue)" stroke="#1760ff" stroke-width="2"/>
+        <g clip-path="url(#tileTwoClip)"><path d="M651 560 777 495V563Z" fill="#087aff" opacity=".11"/></g>
+        <text x="474" y="501" class="stat-title">MÁXIMA</text><text id="maximum" x="474" y="536" class="stat-number">0.0</text><text x="474" y="555" class="stat-unit">KM/H</text>
 
-          <svg class="gauge" viewBox="0 0 600 230">
-            <defs>
-              <linearGradient id="speedGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#087cff"/>
-                <stop offset="42%" stop-color="#315cff"/>
-                <stop offset="70%" stop-color="#8750e8"/>
-                <stop offset="100%" stop-color="#ff304d"/>
-              </linearGradient>
-              <filter id="speedGlow">
-                <feGaussianBlur stdDeviation="5" result="blur"/>
-                <feMerge>
-                  <feMergeNode in="blur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
+        <path d="M792 491 809 474H1119L1136 491V543L1119 560H809L792 543Z" fill="url(#tileRed)" stroke="#ff324e" stroke-width="2"/>
+        <g clip-path="url(#tileThreeClip)"><path d="M1015 560 1142 495V563Z" fill="#ff254c" opacity=".13"/><path d="m1054 560 88-65" stroke="#ff254c" stroke-opacity=".32" stroke-width="2"/></g>
+        <text x="838" y="501" class="stat-title">DISTANCIA</text><text id="distance" x="838" y="536" class="stat-number">0.00</text><text x="838" y="555" class="stat-unit">KM</text>
 
-            <path id="gaugeBackground" fill="#24364a"/>
-            <path id="gaugeProgress" fill="url(#speedGradient)" filter="url(#speedGlow)"/>
+        <path d="M1157 491 1174 474H1515L1532 492V543L1515 560H1174L1157 543Z" fill="url(#tileBlue)" stroke="#069ff1" stroke-width="2"/>
+        <g clip-path="url(#tileFourClip)"><path d="M1407 560 1539 493V563Z" fill="#067fff" opacity=".12"/><path d="m1438 560 100-65" stroke="#128bff" stroke-opacity=".3" stroke-width="2"/></g>
+        <text x="1203" y="501" class="stat-title">TIEMPO</text><text id="duration" x="1203" y="536" class="stat-number stat-time">00:00</text><text x="1203" y="555" class="stat-unit">RECORRIDO</text>
+      </g>
 
-            <text id="speedNumber" x="330" y="158" text-anchor="middle">0</text>
-            <text class="gauge-unit" x="330" y="184" text-anchor="middle">KM/H</text>
-          </svg>
+      <!-- Static GPS start and stop plates -->
+      <g id="startGPS" class="interactive svg-button" role="button" tabindex="0" aria-label="Iniciar GPS">
+        <path d="M50 616 79 574H430L407 616H48Z" fill="url(#blueButton)" stroke="#08baff" stroke-width="2" filter="url(#blueGlow)"/>
+        <text x="238" y="603" text-anchor="middle" class="button-text">INICIAR GPS</text>
+      </g>
+      <g id="stopGPS" class="interactive svg-button is-disabled" role="button" tabindex="0" aria-label="Detener GPS" aria-disabled="true">
+        <path d="M451 574H778L755 616H428Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/>
+        <text x="603" y="603" text-anchor="middle" class="button-text button-dim">DETENER</text>
+      </g>
 
-          <div class="gauge-caption">
-            <span>0 KM/H</span>
-            <span>300 KM/H</span>
-          </div>
+      <!-- Simulation frame, decorative button, readout and slider -->
+      <path d="M41 659 64 636H1512L1558 682V745L1536 768H64L41 745Z" fill="#030d1b" fill-opacity=".97" stroke="url(#testEdge)" stroke-width="3" filter="url(#deepShadow)"/>
+      <g clip-path="url(#testPanelClip)">
+        <rect x="41" y="636" width="1518" height="132" fill="url(#fineCarbon)" opacity=".26"/>
+        <path d="M111 690H1520" stroke="#173c56" stroke-width="1.3"/>
+        <text x="88" y="680" class="test-slashes">///</text>
+        <text x="164" y="680" class="test-title">MODO DE PRUEBAS</text>
+        <text x="1504" y="677" text-anchor="end" class="test-code">TEST <tspan fill="#ed356d">/</tspan> 01</text>
+        <g id="testToggle" class="interactive svg-button" role="button" tabindex="0" aria-label="Activar simulación" aria-pressed="false">
+          <path d="M88 738 116 704H598L574 742H66Z" fill="url(#blueButton)" stroke="#06bdff" stroke-width="2"/>
+          <text id="testToggleLabel" x="332" y="731" text-anchor="middle" class="sim-button">ACTIVAR SIMULACIÓN</text>
+        </g>
+        <text x="688" y="704" text-anchor="middle" class="sim-caption">VELOCIDAD SIMULADA:</text>
+        <text id="testSpeedValue" x="688" y="730" text-anchor="middle" class="sim-value">0 KM/H</text>
+        <g id="testSpeed" class="interactive slider-control" role="slider" tabindex="0" aria-label="Velocidad simulada" aria-valuemin="0" aria-valuemax="300" aria-valuenow="0">
+          <rect id="testSpeedTrack" x="857" y="718" width="557" height="10" rx="5" fill="url(#sliderBar)"/>
+          <circle cx="863" cy="723" r="17" fill="#078fff" opacity=".45" filter="url(#blueGlow)"/>
+          <circle id="testSpeedThumb" cx="863" cy="723" r="12" fill="#08aaff" stroke="#f6fbff" stroke-width="7"/>
+        </g>
+        <text id="testStatus" x="800" y="750" text-anchor="middle" class="sim-status">SIMULACIÓN DESACTIVADA</text>
+      </g>
+      </g>
 
-          <div class="gauge-footer">
-            <div>
-              <small>GPS SPEED</small>
-              <strong>MAX <span id="maxInline">0</span> KM/H</strong>
-            </div>
-            <div class="right">
-              <small>SPEED SYSTEM</small>
-              <strong>PRECISIÓN <span id="accuracy">--</span></strong>
-            </div>
-          </div>
-        </article>
+      <g id="view-laps" class="svg-view secondary-view" style="display:none">
+        <path d="M40 256 82 215H1558V740L1531 768H64L40 744Z" fill="#020d1c" fill-opacity=".96" stroke="url(#frameEdge)" stroke-width="3" filter="url(#deepShadow)"/>
+        <path d="M82 272H1558" stroke="#124b74" stroke-width="1.4"/>
+        <path d="M40 744 64 768H1531L1558 740" fill="none" stroke="#087aff" stroke-opacity=".45" stroke-width="2"/>
+        <text x="99" y="260" class="panel-title">LAP TIME</text>
+        <circle cx="1450" cy="240" r="9" fill="#00f096" filter="url(#signalGlow)"/>
+        <text x="1480" y="249" text-anchor="end" class="live-text">GPS LAP TIMER</text>
+        <path d="M95 300H1500V483H95Z" fill="#06162a" stroke="#194967" stroke-width="2"/>
+        <text id="lapClock" x="797" y="419" text-anchor="middle" class="lap-clock">00:00.00</text>
+        <text x="797" y="454" text-anchor="middle" class="page-label">CURRENT LAP / GPS TIMING</text>
+        <text id="lapAutoStatus" x="797" y="475" text-anchor="middle" class="page-small">AUTO START ≥ 5 KM/H · FINISH CHECKPOINT NOT SET</text>
+        <g id="lapStart" class="interactive svg-button" role="button" tabindex="0" aria-label="Iniciar cronómetro">
+          <path d="M106 529 136 488H430L410 529H88Z" fill="url(#blueButton)" stroke="#08baff" stroke-width="2"/>
+          <text x="258" y="515" text-anchor="middle" class="button-text">INICIAR</text>
+        </g>
+        <g id="lapMark" class="interactive svg-button" role="button" tabindex="0" aria-label="Registrar vuelta">
+          <path d="M455 488H756L736 529H435Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/>
+          <text x="595" y="515" text-anchor="middle" class="button-text button-dim">＋ VUELTA</text>
+        </g>
+        <g id="lapStop" class="interactive svg-button is-disabled" role="button" tabindex="0" aria-label="Detener cronómetro" aria-disabled="true">
+          <path d="M782 488H1083L1063 529H762Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/>
+          <text x="922" y="515" text-anchor="middle" class="button-text button-dim">DETENER</text>
+        </g>
+        <g id="lapReset" class="interactive svg-button" role="button" tabindex="0" aria-label="Reiniciar cronómetro">
+          <path d="M1109 488H1483L1463 529H1089Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/>
+          <text x="1286" y="515" text-anchor="middle" class="button-text button-dim">REINICIAR</text>
+        </g>
+        <path d="M94 553H1505" stroke="#173c56" stroke-width="1.3"/>
+        <text x="100" y="584" class="page-label">VUELTAS REGISTRADAS</text>
+        <text x="1490" y="584" text-anchor="end" class="page-small">GPS / TIME / SPEED</text>
+        <g id="lapList"></g>
+      </g>
 
-        <article class="panel angular limit-panel">
-          <div class="eyebrow">CONTROL / SAFETY</div>
-          <h3>LÍMITE DE<br>VELOCIDAD</h3>
-          <div class="limit-number" id="limitValue">120</div>
-          <div class="limit-unit">KM/H</div>
-          <div class="limit-status" id="limitStatus">● DENTRO DEL LÍMITE</div>
-          <div class="meter">
-            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-          </div>
-        </article>
+      <g id="view-gps" class="svg-view secondary-view" style="display:none">
+        <path d="M40 256 82 215H1558V740L1531 768H64L40 744Z" fill="#020d1c" fill-opacity=".96" stroke="url(#frameEdge)" stroke-width="3" filter="url(#deepShadow)"/>
+        <path d="M82 272H1558" stroke="#124b74" stroke-width="1.4"/>
+        <text x="99" y="260" class="panel-title">DATOS GPS / CHECKPOINTS</text>
+        <g>
+          <path d="M82 298 104 278H822L844 300V445L824 465H104L82 443Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
+          <text x="120" y="325" class="page-label">LATITUD</text><text x="120" y="365" class="page-value" id="latitude">--</text>
+          <text x="470" y="325" class="page-label">LONGITUD</text><text x="470" y="365" class="page-value" id="longitude">--</text>
+          <text x="120" y="405" class="page-label">ALTITUD</text><text x="120" y="438" class="page-value page-value-small" id="altitude">--</text>
+          <text x="470" y="405" class="page-label">PRECISIÓN GPS</text><text x="470" y="438" class="page-value page-value-small" id="gpsAccuracy">--</text>
+        </g>
+        <g id="saveCheckpoint" class="interactive svg-button" role="button" tabindex="0" aria-label="Guardar checkpoint">
+          <path d="M99 498 127 460H523L503 498H82Z" fill="url(#blueButton)" stroke="#08baff" stroke-width="2"/>
+          <text x="300" y="484" text-anchor="middle" class="button-text">＋ CHECKPOINT</text>
+        </g>
+        <text id="checkpointFeedback" x="550" y="486" class="page-small">GUARDA TU POSICIÓN GPS</text>
+        <path d="M82 525H844" stroke="#173c56" stroke-width="1.3"/>
+        <text x="100" y="553" class="page-label">PUNTOS GUARDADOS / PASOS</text>
+        <g id="checkpointList"></g>
+        <path d="M882 298 904 278H1495L1517 300V744L1493 766H904L882 744Z" fill="url(#tileBlue)" stroke="#1760ff" stroke-width="2"/>
+        <text x="920" y="326" class="page-label">HISTORIAL DE SESIONES</text>
+        <text x="920" y="353" class="page-small">RECORRIDOS GUARDADOS EN ESTE DISPOSITIVO</text>
+        <g id="sessionHistory"></g>
+      </g>
 
-      </div>
+      <g id="view-settings" class="svg-view secondary-view" style="display:none">
+        <path d="M40 256 82 215H1558V740L1531 768H64L40 744Z" fill="#020d1c" fill-opacity=".96" stroke="url(#frameEdge)" stroke-width="3" filter="url(#deepShadow)"/>
+        <path d="M82 272H1558" stroke="#124b74" stroke-width="1.4"/>
+        <text x="99" y="260" class="panel-title">AJUSTES DE CONDUCCIÓN</text>
+        <path d="M82 303 106 280H782L804 302V721L782 744H106L82 721Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
+        <text x="122" y="331" class="page-label">LÍMITE DE VELOCIDAD</text>
+        <text id="limitReadout" x="120" y="410" class="setting-value">120</text><text x="270" y="408" class="limit-unit">KM/H</text>
+        <g id="limitMinus" class="interactive svg-button" role="button" tabindex="0" aria-label="Bajar límite">
+          <path d="M438 356H554L540 395H424Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/>
+          <text x="489" y="384" text-anchor="middle" class="button-text button-dim">−</text>
+        </g>
+        <g id="limitPlus" class="interactive svg-button" role="button" tabindex="0" aria-label="Subir límite">
+          <path d="M570 356H686L672 395H556Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/>
+          <text x="621" y="384" text-anchor="middle" class="button-text button-dim">＋</text>
+        </g>
+        <path d="M122 443H752" stroke="#173c56" stroke-width="1.3"/>
+        <text x="122" y="480" class="page-label">INICIO AUTOMÁTICO DE VUELTA</text>
+        <text id="autoStartValue" x="122" y="522" class="page-value page-value-small">ACTIVADO</text>
+        <g id="autoStartToggle" class="interactive svg-button" role="button" tabindex="0" aria-pressed="true" aria-label="Alternar inicio automático">
+          <rect class="toggle-track is-on" x="610" y="491" width="96" height="38" rx="19" fill="#078aff"/>
+          <circle class="toggle-knob is-on" cx="686" cy="510" r="15" fill="#f4f8ff"/>
+        </g>
+        <text x="122" y="566" class="page-small">UMBRAL DE INICIO</text>
+        <text id="autoStartThreshold" x="122" y="607" class="page-value page-value-small">5 KM/H</text>
+        <g id="thresholdMinus" class="interactive svg-button" role="button" tabindex="0" aria-label="Bajar umbral de inicio"><path d="M438 574H554L540 613H424Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/><text x="489" y="602" text-anchor="middle" class="button-text button-dim">−</text></g>
+        <g id="thresholdPlus" class="interactive svg-button" role="button" tabindex="0" aria-label="Subir umbral de inicio"><path d="M570 574H686L672 613H556Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/><text x="621" y="602" text-anchor="middle" class="button-text button-dim">＋</text></g>
 
-      <div class="stats">
-        <article class="panel stat">
-          <span class="stat-label">MEDIA</span>
-          <strong class="stat-value" id="average">0</strong>
-          <small class="stat-unit">KM/H</small>
-        </article>
-        <article class="panel stat">
-          <span class="stat-label">MÁXIMA</span>
-          <strong class="stat-value" id="maximum">0</strong>
-          <small class="stat-unit">KM/H</small>
-        </article>
-        <article class="panel stat">
-          <span class="stat-label">DISTANCIA</span>
-          <strong class="stat-value" id="distance">0.00</strong>
-          <small class="stat-unit">KM</small>
-        </article>
-        <article class="panel stat">
-          <span class="stat-label">TIEMPO</span>
-          <strong class="stat-value" id="duration" style="font-size:clamp(15px,3.7vw,25px)">00:00:00</strong>
-          <small class="stat-unit">HH:MM:SS</small>
-        </article>
-      </div>
-
-      <div class="buttons">
-        <button class="btn" id="startGPS">INICIAR GPS</button>
-        <button class="btn secondary" id="stopGPS" disabled>DETENER</button>
-      </div>
-
-      <article class="panel angular test-panel">
-        <div class="test-title">
-          <div>
-            <span style="color:#d64da9">▰▰</span>
-            <h3>MODO DE PRUEBAS</h3>
-            <small>SIMULACIÓN DE VELOCIDAD GPS</small>
-          </div>
-          <span class="code">TEST / 01</span>
-        </div>
-
-        <div class="test-controls">
-          <button class="btn" id="testToggle" style="padding:9px 12px;font-size:10px">
-            ACTIVAR SIMULACIÓN
-          </button>
-          <strong class="test-speed"><span id="testSpeedValue">0</span> <small>KM/H</small></strong>
-        </div>
-
-        <input type="range" id="testSpeed" min="0" max="300" value="0">
-
-        <div class="range-labels">
-          <span>0 KM/H</span><span>150</span><span>300 KM/H</span>
-        </div>
-
-        <div class="test-status" id="testStatus">
-          ● SIMULACIÓN DESACTIVADA
-        </div>
-      </article>
-    </section>
-
-    <section class="page" id="laps">
-      <article class="panel sub-panel">
-        <div class="eyebrow">GPS DRIVE / TRACK</div>
-        <h2>LAP TIME</h2>
-        <div class="lap-clock" id="lapClock">00:00.00</div>
-        <div class="lap-buttons">
-          <button class="btn" id="lapStart">INICIAR</button>
-          <button class="btn secondary" id="lapMark">VUELTA</button>
-          <button class="btn secondary" id="lapStop">DETENER</button>
-        </div>
-        <div class="data-list" id="lapList">
-          <p class="empty">Todavía no hay vueltas registradas.</p>
-        </div>
-      </article>
-    </section>
-
-    <section class="page" id="gps">
-      <article class="panel sub-panel">
-        <div class="eyebrow">GPS DRIVE / POSITION</div>
-        <h2>DATOS GPS</h2>
-        <div class="coordinates">
-          <div><small>LATITUD</small><strong id="latitude">--</strong></div>
-          <div><small>LONGITUD</small><strong id="longitude">--</strong></div>
-          <div><small>ALTITUD</small><strong id="altitude">--</strong></div>
-        </div>
-        <button class="btn" id="saveCheckpoint">GUARDAR CHECKPOINT</button>
-        <div class="data-list" id="checkpoints">
-          <p class="empty">No hay checkpoints guardados.</p>
-        </div>
-      </article>
-    </section>
-
-    <section class="page" id="settings">
-      <article class="panel sub-panel">
-        <div class="eyebrow">GPS DRIVE / CONFIGURATION</div>
-        <h2>AJUSTES</h2>
-        <label class="setting-label" for="speedLimit">LÍMITE DE VELOCIDAD (KM/H)</label>
-        <input type="number" id="speedLimit" min="1" max="300" value="120">
-        <button class="btn" id="saveSettings">GUARDAR AJUSTES</button>
-      </article>
-    </section>
+        <path d="M846 303 870 280H1495L1517 302V721L1493 744H870L846 721Z" fill="url(#tileBlue)" stroke="#1760ff" stroke-width="2"/>
+        <text x="888" y="331" class="page-label">CHECKPOINTS AUTOMÁTICOS</text>
+        <text id="autoCheckpointValue" x="888" y="373" class="page-value page-value-small">ACTIVADOS</text>
+        <g id="autoCheckpointToggle" class="interactive svg-button" role="button" tabindex="0" aria-pressed="true" aria-label="Alternar checkpoints automáticos">
+          <rect class="toggle-track is-on" x="1323" y="342" width="96" height="38" rx="19" fill="#078aff"/>
+          <circle class="toggle-knob is-on" cx="1399" cy="361" r="15" fill="#f4f8ff"/>
+        </g>
+        <path d="M888 407H1475" stroke="#173c56" stroke-width="1.3"/>
+        <text x="888" y="448" class="page-label">RADIO DE DETECCIÓN</text>
+        <text id="checkpointRadius" x="888" y="490" class="page-value page-value-small">20 M</text>
+        <g id="radiusMinus" class="interactive svg-button" role="button" tabindex="0" aria-label="Reducir radio"><path d="M1190 448H1306L1292 487H1176Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/><text x="1241" y="476" text-anchor="middle" class="button-text button-dim">−</text></g>
+        <g id="radiusPlus" class="interactive svg-button" role="button" tabindex="0" aria-label="Aumentar radio"><path d="M1322 448H1438L1424 487H1308Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/><text x="1373" y="476" text-anchor="middle" class="button-text button-dim">＋</text></g>
+        <path d="M888 523H1475" stroke="#173c56" stroke-width="1.3"/>
+        <text x="888" y="564" class="page-label">LÍNEA DE META GPS</text>
+        <text id="finishCheckpointValue" x="888" y="604" class="page-value page-value-small">NO CONFIGURADA</text>
+        <text x="888" y="640" class="page-small">MARCA UN CHECKPOINT COMO META EN LA PESTAÑA GPS</text>
+        <text x="888" y="700" class="page-small">AJUSTES GUARDADOS LOCALMENTE</text>
+      </g>
+    </svg>
   </main>
-
-  <footer>
-    GPS DRIVE <span>PERFORMANCE SYSTEM</span> <b>V1.0</b>
-  </footer>
-</div>
-
-<script>
-(() => {
-  const $ = id => document.getElementById(id);
-  const clamp = (v,min,max) => Math.max(min,Math.min(max,v));
-
-  let speed = 0;
-  let maxSpeed = 0;
-  let speedTotal = 0;
-  let speedSamples = 0;
-  let distance = 0;
-  let lastPosition = null;
-  let watchId = null;
-  let gpsActive = false;
-  let simulation = false;
-  let tripStart = null;
-  let tripTimer = null;
-  let limit = Number(localStorage.getItem('gpsDriveLimit')) || 120;
-
-  let lapRunning = false;
-  let lapStartTime = 0;
-  let lapInterval = null;
-  let lapNumber = 0;
-  let checkpoints = [];
-
-  // VELOCÍMETRO ANGULAR
-  const points = [
-    {x:30,y:180},
-    {x:174,y:72},
-    {x:534,y:72}
-  ];
-
-  const samples = [];
-  let totalLength = 0;
-
-  function buildGauge() {
-    samples.length = 0;
-    totalLength = 0;
-
-    for(let segment=0;segment<2;segment++) {
-      const a=points[segment];
-      const b=points[segment+1];
-      const length=Math.hypot(b.x-a.x,b.y-a.y);
-      const steps=Math.ceil(length/2);
-
-      for(let i=0;i<=steps;i++) {
-        if(segment>0 && i===0) continue;
-
-        const t=i/steps;
-        const x=a.x+(b.x-a.x)*t;
-        const y=a.y+(b.y-a.y)*t;
-
-        if(samples.length) {
-          const p=samples[samples.length-1];
-          totalLength+=Math.hypot(x-p.x,y-p.y);
-        }
-
-        samples.push({x,y,d:totalLength});
-      }
-    }
-  }
-
-  function thickness(d) {
-    const t=d/totalLength;
-    return 7+9*Math.sin(Math.PI*t*.72);
-  }
-
-  function ribbon(distanceToDraw) {
-    const pts=samples.filter(p=>p.d<=distanceToDraw);
-    const next=samples.find(p=>p.d>distanceToDraw);
-    if(next) pts.push(next);
-    if(pts.length<2) return '';
-
-    const left=[];
-    const right=[];
-
-    pts.forEach((p,i)=>{
-      const prev=pts[Math.max(0,i-1)];
-      const next=pts[Math.min(pts.length-1,i+1)];
-      const dx=next.x-prev.x;
-      const dy=next.y-prev.y;
-      const len=Math.hypot(dx,dy)||1;
-      const nx=-dy/len;
-      const ny=dx/len;
-      const w=thickness(p.d)/2;
-
-      left.push([p.x+nx*w,p.y+ny*w]);
-      right.push([p.x-nx*w,p.y-ny*w]);
-    });
-
-    return 'M'+left.map(p=>p.join(',')).join(' L')+
-      ' L'+right.reverse().map(p=>p.join(',')).join(' L')+' Z';
-  }
-
-  function drawGauge(value) {
-    $('gaugeBackground').setAttribute('d',ribbon(totalLength));
-    $('gaugeProgress').setAttribute(
-      'd',
-      ribbon(totalLength*clamp(value/300,0,1))
-    );
-    $('speedNumber').textContent=Math.round(value);
-  }
-
-  function updateSpeed(value,accuracy='--') {
-    speed=clamp(Number(value)||0,0,300);
-
-    drawGauge(speed);
-
-    $('accuracy').textContent=
-      accuracy==='--'?'--':Math.round(accuracy)+' m';
-
-    if(speed>maxSpeed) {
-      maxSpeed=speed;
-      $('maximum').textContent=Math.round(maxSpeed);
-      $('maxInline').textContent=Math.round(maxSpeed);
-    }
-
-    if(speed>0) {
-      speedTotal+=speed;
-      speedSamples++;
-    }
-
-    $('average').textContent=
-      speedSamples?Math.round(speedTotal/speedSamples):0;
-
-    $('limitStatus').textContent=
-      speed>limit?'● LÍMITE SUPERADO':'● DENTRO DEL LÍMITE';
-
-    $('limitStatus').classList.toggle('exceeded',speed>limit);
-  }
-
-  // NAVEGACIÓN
-  document.querySelectorAll('.tab').forEach(tab=>{
-    tab.addEventListener('click',()=>{
-      document.querySelectorAll('.tab').forEach(t=>
-        t.classList.toggle('active',t===tab)
-      );
-      document.querySelectorAll('.page').forEach(p=>
-        p.classList.toggle('active',p.id===tab.dataset.page)
-      );
-    });
-  });
-
-  function formatTime(ms,centiseconds=false) {
-    const total=Math.floor(Math.max(0,ms)/1000);
-    const h=Math.floor(total/3600);
-    const m=Math.floor(total%3600/60);
-    const s=total%60;
-
-    if(centiseconds) {
-      return String(Math.floor(total/60)).padStart(2,'0')+':'+
-        String(s).padStart(2,'0')+'.'+
-        String(Math.floor(ms%1000/10)).padStart(2,'0');
-    }
-
-    return [h,m,s].map(v=>String(v).padStart(2,'0')).join(':');
-  }
-
-  function updateTrip() {
-    if(tripStart) {
-      $('duration').textContent=formatTime(Date.now()-tripStart);
-    }
-  }
-
-  // GPS
-  function calculateDistance(a,b) {
-    const R=6371;
-    const rad=v=>v*Math.PI/180;
-    const dLat=rad(b.latitude-a.latitude);
-    const dLon=rad(b.longitude-a.longitude);
-
-    const x=Math.sin(dLat/2)**2+
-      Math.cos(rad(a.latitude))*Math.cos(rad(b.latitude))*
-      Math.sin(dLon/2)**2;
-
-    return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
-  }
-
-  function processPosition(position) {
-    const c=position.coords;
-
-    updateSpeed(c.speed==null?0:c.speed*3.6,c.accuracy);
-
-    $('latitude').textContent=c.latitude.toFixed(6);
-    $('longitude').textContent=c.longitude.toFixed(6);
-    $('altitude').textContent=c.altitude==null?'--':Math.round(c.altitude)+' m';
-
-    if(lastPosition) {
-      const d=calculateDistance(lastPosition,c);
-      if(d<1) distance+=d;
-      $('distance').textContent=distance.toFixed(2);
-    }
-
-    lastPosition={latitude:c.latitude,longitude:c.longitude};
-  }
-
-  function gpsError(error) {
-    const messages={
-      1:'PERMISO GPS DENEGADO',
-      2:'GPS NO DISPONIBLE',
-      3:'TIEMPO DE ESPERA GPS'
-    };
-    $('gpsStatus').innerHTML='<i></i> '+(messages[error.code]||'ERROR GPS');
-    $('gpsStatus').classList.remove('connected');
-  }
-
-  function startGPS() {
-    if(simulation) toggleSimulation(false);
-    if(!navigator.geolocation) {
-      $('gpsStatus').innerHTML='<i></i> GPS NO DISPONIBLE';
-      return;
-    }
-    if(gpsActive) return;
-
-    gpsActive=true;
-    lastPosition=null;
-    tripStart=tripStart||Date.now();
-    tripTimer=setInterval(updateTrip,500);
-
-    $('gpsStatus').innerHTML='<i></i> BUSCANDO GPS';
-    $('startGPS').disabled=true;
-    $('stopGPS').disabled=false;
-
-    watchId=navigator.geolocation.watchPosition(
-      processPosition,
-      gpsError,
-      {enableHighAccuracy:true,maximumAge:1000,timeout:15000}
-    );
-  }
-
-  function stopGPS() {
-    if(watchId!==null) navigator.geolocation.clearWatch(watchId);
-    watchId=null;
-    gpsActive=false;
-    clearInterval(tripTimer);
-
-    $('gpsStatus').innerHTML='<i></i> GPS DESCONECTADO';
-    $('gpsStatus').classList.remove('connected');
-    $('startGPS').disabled=false;
-    $('stopGPS').disabled=true;
-    updateSpeed(0);
-  }
-
-  $('startGPS').addEventListener('click',startGPS);
-  $('stopGPS').addEventListener('click',stopGPS);
-
-  // SIMULACIÓN
-  function toggleSimulation(force) {
-    simulation=typeof force==='boolean'?force:!simulation;
-
-    if(simulation) {
-      if(gpsActive) stopGPS();
-
-      $('testToggle').textContent='DESACTIVAR SIMULACIÓN';
-      $('testStatus').textContent='● SIMULACIÓN ACTIVADA';
-      $('testStatus').classList.add('enabled');
-      $('gpsStatus').innerHTML='<i></i> MODO SIMULACIÓN';
-      $('gpsStatus').classList.add('connected');
-      updateSpeed(Number($('testSpeed').value));
-    } else {
-      $('testToggle').textContent='ACTIVAR SIMULACIÓN';
-      $('testStatus').textContent='● SIMULACIÓN DESACTIVADA';
-      $('testStatus').classList.remove('enabled');
-      $('gpsStatus').innerHTML='<i></i> GPS DESCONECTADO';
-      $('gpsStatus').classList.remove('connected');
-      updateSpeed(0);
-    }
-  }
-
-  $('testToggle').addEventListener('click',()=>toggleSimulation());
-
-  $('testSpeed').addEventListener('input',e=>{
-    const value=Number(e.target.value);
-    $('testSpeedValue').textContent=value;
-    if(simulation) updateSpeed(value);
-  });
-
-  // VUELTAS
-  $('lapStart').addEventListener('click',()=>{
-    if(lapRunning) return;
-    lapRunning=true;
-    lapStartTime=Date.now();
-
-    lapInterval=setInterval(()=>{
-      $('lapClock').textContent=
-        formatTime(Date.now()-lapStartTime,true);
-    },30);
-  });
-
-  $('lapMark').addEventListener('click',()=>{
-    if(!lapRunning) return;
-
-    lapNumber++;
-    const elapsed=Date.now()-lapStartTime;
-
-    const row=document.createElement('div');
-    row.className='data-row';
-
-    const name=document.createElement('span');
-    name.textContent='VUELTA '+String(lapNumber).padStart(2,'0');
-
-    const time=document.createElement('strong');
-    time.textContent=formatTime(elapsed,true);
-
-    row.append(name,time);
-    $('lapList').querySelector('.empty')?.remove();
-    $('lapList').prepend(row);
-
-    lapStartTime=Date.now();
-  });
-
-  $('lapStop').addEventListener('click',()=>{
-    lapRunning=false;
-    clearInterval(lapInterval);
-  });
-
-  // CHECKPOINTS
-  function renderCheckpoints() {
-    const box=$('checkpoints');
-    box.innerHTML='';
-
-    if(!checkpoints.length) {
-      box.innerHTML='<p class="empty">No hay checkpoints guardados.</p>';
-      return;
-    }
-
-    checkpoints.forEach((p,i)=>{
-      const row=document.createElement('div');
-      row.className='data-row';
-
-      const label=document.createElement('span');
-      label.textContent='CHECKPOINT '+(i+1)+' · '+p.lat.toFixed(5)+', '+p.lon.toFixed(5);
-
-      const button=document.createElement('button');
-      button.className='btn secondary';
-      button.textContent='ELIMINAR';
-      button.style.padding='6px';
-
-      button.addEventListener('click',()=>{
-        checkpoints.splice(i,1);
-        localStorage.setItem('gpsDriveCheckpoints',JSON.stringify(checkpoints));
-        renderCheckpoints();
-      });
-
-      row.append(label,button);
-      box.append(row);
-    });
-  }
-
-  try {
-    checkpoints=JSON.parse(localStorage.getItem('gpsDriveCheckpoints')||'[]');
-  } catch(e) {
-    checkpoints=[];
-  }
-
-  $('saveCheckpoint').addEventListener('click',()=>{
-    if(!lastPosition) {
-      $('gpsStatus').innerHTML='<i></i> ESPERANDO POSICIÓN GPS';
-      return;
-    }
-
-    checkpoints.push({
-      lat:lastPosition.latitude,
-      lon:lastPosition.longitude
-    });
-
-    localStorage.setItem('gpsDriveCheckpoints',JSON.stringify(checkpoints));
-    renderCheckpoints();
-  });
-
-  // AJUSTES
-  $('limitValue').textContent=limit;
-  $('speedLimit').value=limit;
-
-  $('saveSettings').addEventListener('click',()=>{
-    limit=clamp(Number($('speedLimit').value)||120,1,300);
-    $('speedLimit').value=limit;
-    $('limitValue').textContent=limit;
-    localStorage.setItem('gpsDriveLimit',String(limit));
-    updateSpeed(speed);
-  });
-
-  // INICIO
-  buildGauge();
-  renderCheckpoints();
-  drawGauge(0);
-  updateSpeed(0);
-})();
-</script>
-
+  <script src="script.js"></script>
 </body>
 </html>
