@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070a10">
+<title>GPS DRIVE | Performance System</title>
+
+<style>
+:root {
+  --bg:#070a10;
+  --panel:#0d1622;
+  --blue:#087cff;
+  --violet:#8050e4;
+  --red:#f12c4b;
+  --muted:#71849b;
+  --white:#f4f7fc;
+  --green:#50e59a;
+}
+
+* {box-sizing:border-box}
+
+html,body {
+  margin:0;
+  min-height:100%;
+  background:#070a10;
+  color:var(--white);
+  font-family:"Arial Narrow","Bahnschrift","Avenir Next Condensed",Impact,sans-serif;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 50% 5%,#17263b 0%,#080d16 48%,#05080d 100%);
+}
+
+button,input {font:inherit}
+
+.app {
+  width:100%;
+  max-width:900px;
+  min-height:100vh;
+  margin:auto;
+  padding:20px 17px;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+
+.background-mark {
+  position:absolute;
+  z-index:-1;
+  top:150px;
+  left:50%;
+  transform:translateX(-50%) skew(-12deg);
+  white-space:nowrap;
+  font-family:Arial Black,sans-serif;
+  font-size:clamp(220px,48vw,440px);
+  font-weight:900;
+  font-style:italic;
+  letter-spacing:-.14em;
+  color:rgba(140,155,180,.035);
+  pointer-events:none;
+}
+
+.background-mark span {
+  color:rgba(10,115,255,.06);
+}
+
+header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+.logo {line-height:.8}
+
+.logo-gps {
+  font-size:23px;
+  font-weight:900;
+  font-style:italic;
+  letter-spacing:.15em;
+}
+
+.logo-drive {
+  color:#1688ff;
+  font-size:48px;
+  font-weight:900;
+  font-style:italic;
+  letter-spacing:.02em;
+  text-shadow:0 0 20px #087cff55;
+}
+
+.logo-sub {
+  margin-top:7px;
+  font-size:9px;
+  color:#8292a8;
+  letter-spacing:.25em;
+}
+
+.gps-status {
+  color:#e65b70;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.1em;
+  text-align:right;
+}
+
+.gps-status i,
+.live i {
+  display:inline-block;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#e83d50;
+  margin-right:5px;
+  box-shadow:0 0 9px #e83d50;
+}
+
+.gps-status.connected {color:var(--green)}
+.gps-status.connected i {background:var(--green)}
+
+.tabs {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+  margin-bottom:15px;
+}
+
+.tab {
+  border:1px solid #24415e;
+  background:linear-gradient(120deg,#101b29,#09111b);
+  color:#8294aa;
+  padding:12px 3px;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.1em;
+  clip-path:polygon(7% 0,100% 0,93% 100%,0 100%);
+  cursor:pointer;
+}
+
+.tab.active {
+  color:white;
+  background:linear-gradient(105deg,#087cff,#4056d5 65%,#963eac);
+  border-color:#168bff;
+  box-shadow:0 0 18px #087cff45;
+}
+
+.page {display:none}
+.page.active {display:block}
+
+.panel {
+  background:linear-gradient(145deg,rgba(17,29,44,.97),rgba(7,13,22,.98));
+  border:1px solid #20364e;
+  box-shadow:inset 0 0 24px #0b1b2c55,0 8px 24px #0005;
+  position:relative;
+}
+
+.angular {
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+}
+
+.dashboard {
+  display:grid;
+  grid-template-columns:minmax(0,2.2fr) minmax(150px,.9fr);
+  gap:10px;
+}
+
+.speed-panel {
+  padding:15px 14px 12px;
+  border-left:2px solid var(--blue);
+  min-width:0;
+}
+
+.speed-panel:after,
+.test-panel:after {
+  content:"";
+  position:absolute;
+  bottom:0;
+  right:0;
+  height:2px;
+  width:38%;
+  background:linear-gradient(90deg,var(--violet),var(--red));
+}
+
+.panel-top {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+
+.eyebrow {
+  font-size:9px;
+  color:#71869f;
+  font-weight:900;
+  letter-spacing:.19em;
+}
+
+h2 {
+  font-size:26px;
+  font-style:italic;
+  font-weight:900;
+  margin:4px 0;
+  letter-spacing:.04em;
+}
+
+.live {
+  font-size:9px;
+  font-weight:900;
+  color:var(--green);
+  margin-top:9px;
+  white-space:nowrap;
+}
+
+.live i {
+  background:var(--green);
+  box-shadow:0 0 8px var(--green);
+}
+
+.scale {
+  display:flex;
+  justify-content:space-between;
+  padding:0 2%;
+  color:#8799af;
+  font-size:11px;
+  font-weight:800;
+  margin-top:12px;
+}
+
+.gauge {
+  display:block;
+  width:100%;
+  height:auto;
+  overflow:visible;
+}
+
+#speedNumber {
+  font-size:76px;
+  font-weight:900;
+  font-style:italic;
+  fill:white;
+  letter-spacing:-.04em;
+}
+
+.gauge-unit {
+  fill:#168bff;
+  font-size:17px;
+  font-weight:900;
+  letter-spacing:.2em;
+}
+
+.gauge-caption {
+  display:flex;
+  justify-content:space-between;
+  color:#647991;
+  font-size:9px;
+  letter-spacing:.13em;
+  margin-top:-2px;
+}
+
+.gauge-footer {
+  display:flex;
+  justify-content:space-between;
+  border-top:1px solid #25384c;
+  margin-top:12px;
+  padding-top:10px;
+}
+
+.gauge-footer div {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.gauge-footer small {
+  color:#7388a0;
+  font-size:9px;
+  letter-spacing:.17em;
+}
+
+.gauge-footer strong {
+  font-size:11px;
+}
+
+.right {text-align:right}
+
+.limit-panel {
+  padding:16px 12px;
+  border-right:2px solid var(--red);
+  min-width:0;
+}
+
+.limit-panel h3 {
+  font-size:17px;
+  line-height:1;
+  font-style:italic;
+  margin:14px 0 13px;
+}
+
+.limit-number {
+  font-size:clamp(48px,8vw,76px);
+  font-weight:900;
+  font-style:italic;
+  line-height:.95;
+  letter-spacing:-.04em;
+}
+
+.limit-unit {
+  color:#168bff;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.2em;
+  margin-top:5px;
+}
+
+.limit-status {
+  color:var(--green);
+  font-size:9px;
+  font-weight:900;
+  margin-top:20px;
+  line-height:1.4;
+}
+
+.limit-status.exceeded {color:#ff4058}
+
+.meter {
+  display:flex;
+  gap:3px;
+  margin-top:12px;
+}
+
+.meter i {
+  flex:1;
+  height:5px;
+  background:linear-gradient(90deg,#087cff,#8050e4,#f12c4b);
+}
+
+.stats {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+
+.stat {
+  padding:11px 8px;
+  min-width:0;
+}
+
+.stat:nth-child(2) {border-bottom:2px solid #9a3454}
+
+.stat-label {
+  display:block;
+  color:#8597ad;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+
+.stat-value {
+  display:block;
+  font-size:clamp(22px,5vw,35px);
+  font-style:italic;
+  font-weight:900;
+  margin-top:5px;
+  white-space:nowrap;
+  letter-spacing:-.03em;
+}
+
+.stat-unit {
+  color:#607994;
+  font-size:9px;
+  letter-spacing:.15em;
+}
+
+.buttons {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:11px;
+}
+
+.btn {
+  padding:13px 7px;
+  border:1px solid #1685ff;
+  background:linear-gradient(105deg,#087cff,#354fd2 70%,#7e3eaa);
+  color:white;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.13em;
+  cursor:pointer;
+  box-shadow:0 0 15px #087cff30;
+}
+
+.btn.secondary {
+  background:linear-gradient(120deg,#111d2b,#0b111b);
+  border-color:#294765;
+  color:#aab9cc;
+  box-shadow:none;
+}
+
+.btn:disabled {opacity:.4}
+
+.test-panel {
+  margin-top:11px;
+  padding:14px 15px 12px;
+  border-left:2px solid var(--blue);
+}
+
+.test-title {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+
+.test-title h3 {
+  display:inline-block;
+  font-size:19px;
+  font-style:italic;
+  margin:0 0 3px 7px;
+}
+
+.test-title small {
+  display:block;
+  font-size:9px;
+  color:#778da5;
+  letter-spacing:.16em;
+}
+
+.test-title .code {
+  color:#e45b85;
+  font-size:10px;
+  letter-spacing:.14em;
+}
+
+.test-controls {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:13px;
+}
+
+.test-speed {
+  font-size:24px;
+  font-weight:900;
+  font-style:italic;
+}
+
+.test-speed small {
+  color:#168bff;
+  font-size:10px;
+}
+
+#testSpeed {
+  appearance:none;
+  display:block;
+  width:100%;
+  height:6px;
+  margin:17px 0 7px;
+  border-radius:0;
+  background:linear-gradient(90deg,#087cff,#8050e4,#f12c4b);
+  outline:none;
+}
+
+#testSpeed::-webkit-slider-thumb {
+  appearance:none;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:white;
+  border:3px solid #168bff;
+  box-shadow:0 0 10px #168bff;
+}
+
+#testSpeed::-moz-range-thumb {
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:white;
+  border:3px solid #168bff;
+}
+
+.range-labels {
+  display:flex;
+  justify-content:space-between;
+  color:#71869e;
+  font-size:9px;
+}
+
+.test-status {
+  margin-top:10px;
+  color:#e05b71;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+
+.test-status.enabled {color:var(--green)}
+
+footer {
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  margin-top:17px;
+  color:#71869d;
+  font-size:9px;
+  letter-spacing:.16em;
+}
+
+footer span {color:#46617f}
+footer b {color:#168bff}
+
+.sub-panel {
+  padding:20px;
+  min-height:300px;
+}
+
+.sub-panel h2 {margin:7px 0 20px}
+
+.lap-clock {
+  text-align:center;
+  font-size:clamp(48px,12vw,82px);
+  font-style:italic;
+  font-weight:900;
+  margin:25px 0;
+}
+
+.lap-buttons {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+}
+
+.data-list {
+  margin-top:20px;
+  border-top:1px solid #26394d;
+}
+
+.data-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:11px 3px;
+  border-bottom:1px solid #1b2b3e;
+  font-size:12px;
+  gap:8px;
+}
+
+.empty {
+  color:#71849b;
+  font-size:12px;
+}
+
+.coordinates {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin:20px 0;
+}
+
+.coordinates div {
+  background:#091421;
+  border:1px solid #243a52;
+  padding:12px 8px;
+  min-width:0;
+}
+
+.coordinates small {
+  display:block;
+  color:#71869e;
+  font-size:9px;
+}
+
+.coordinates strong {
+  display:block;
+  font-size:13px;
+  margin-top:7px;
+  overflow-wrap:anywhere;
+}
+
+.setting-label {
+  display:block;
+  color:#9aacc0;
+  font-size:12px;
+  margin:18px 0 8px;
+}
+
+#speedLimit {
+  width:100%;
+  background:#08111c;
+  border:1px solid #294765;
+  color:white;
+  padding:12px;
+  font-size:20px;
+  margin-bottom:15px;
+}
+
+@media(max-width:520px) {
+  .app {padding:15px 10px}
+  .logo-drive {font-size:42px}
+  .logo-gps {font-size:20px}
+  .dashboard {
+    grid-template-columns:minmax(0,1.8fr) minmax(120px,.85fr);
+    gap:7px;
+  }
+  .speed-panel {padding:12px 9px 10px}
+  .limit-panel {padding:13px 9px}
+  h2 {font-size:22px}
+  .limit-panel h3 {font-size:14px}
+  .limit-number {font-size:clamp(43px,12vw,58px)}
+  .limit-status {font-size:8px}
+  .stats {gap:5px}
+  .stat {padding:9px 5px}
+  .stat-label {font-size:8px}
+  .stat-value {font-size:clamp(20px,6vw,28px)}
+  .stat-unit {font-size:8px}
+  .gauge-footer strong {font-size:9px}
+  .gauge-footer small {font-size:8px}
+  .live {font-size:8px}
+  .coordinates {grid-template-columns:1fr}
+}
+
+@media(max-width:360px) {
+  .gps-status {font-size:8px}
+  .tab {font-size:10px}
+  .limit-number {font-size:42px}
+  .speed-panel {padding-left:7px;padding-right:7px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="background-mark"><span>///</span>M</div>
+
+  <header>
+    <div class="logo">
+      <div class="logo-gps">GPS</div>
+      <div class="logo-drive">DRIVE</div>
+      <div class="logo-sub">PERFORMANCE SYSTEM</div>
+    </div>
+    <div class="gps-status" id="gpsStatus">
+      <i></i> GPS DESCONECTADO
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-page="drive">DRIVE</button>
+    <button class="tab" data-page="laps">LAP TIME</button>
+    <button class="tab" data-page="gps">GPS</button>
+    <button class="tab" data-page="settings">AJUSTES</button>
+  </nav>
+
+  <main>
+    <section class="page active" id="drive">
+
+      <div class="dashboard">
+
+        <article class="panel angular speed-panel">
+          <div class="panel-top">
+            <div>
+              <div class="eyebrow">GPS DRIVE / PERFORMANCE</div>
+              <h2>VELOCIDAD</h2>
+            </div>
+            <div class="live"><i></i> LIVE DATA</div>
+          </div>
+
+          <div class="scale">
+            <span>0</span><span>100</span><span>200</span><span>300</span>
+          </div>
+
+          <svg class="gauge" viewBox="0 0 600 230">
+            <defs>
+              <linearGradient id="speedGradient" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#087cff"/>
+                <stop offset="42%" stop-color="#315cff"/>
+                <stop offset="70%" stop-color="#8750e8"/>
+                <stop offset="100%" stop-color="#ff304d"/>
+              </linearGradient>
+              <filter id="speedGlow">
+                <feGaussianBlur stdDeviation="5" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <path id="gaugeBackground" fill="#24364a"/>
+            <path id="gaugeProgress" fill="url(#speedGradient)" filter="url(#speedGlow)"/>
+
+            <text id="speedNumber" x="330" y="158" text-anchor="middle">0</text>
+            <text class="gauge-unit" x="330" y="184" text-anchor="middle">KM/H</text>
+          </svg>
+
+          <div class="gauge-caption">
+            <span>0 KM/H</span>
+            <span>300 KM/H</span>
+          </div>
+
+          <div class="gauge-footer">
+            <div>
+              <small>GPS SPEED</small>
+              <strong>MAX <span id="maxInline">0</span> KM/H</strong>
+            </div>
+            <div class="right">
+              <small>SPEED SYSTEM</small>
+              <strong>PRECISIÓN <span id="accuracy">--</span></strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel angular limit-panel">
+          <div class="eyebrow">CONTROL / SAFETY</div>
+          <h3>LÍMITE DE<br>VELOCIDAD</h3>
+          <div class="limit-number" id="limitValue">120</div>
+          <div class="limit-unit">KM/H</div>
+          <div class="limit-status" id="limitStatus">● DENTRO DEL LÍMITE</div>
+          <div class="meter">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="stats">
+        <article class="panel stat">
+          <span class="stat-label">MEDIA</span>
+          <strong class="stat-value" id="average">0</strong>
+          <small class="stat-unit">KM/H</small>
+        </article>
+        <article class="panel stat">
+          <span class="stat-label">MÁXIMA</span>
+          <strong class="stat-value" id="maximum">0</strong>
+          <small class="stat-unit">KM/H</small>
+        </article>
+        <article class="panel stat">
+          <span class="stat-label">DISTANCIA</span>
+          <strong class="stat-value" id="distance">0.00</strong>
+          <small class="stat-unit">KM</small>
+        </article>
+        <article class="panel stat">
+          <span class="stat-label">TIEMPO</span>
+          <strong class="stat-value" id="duration" style="font-size:clamp(15px,3.7vw,25px)">00:00:00</strong>
+          <small class="stat-unit">HH:MM:SS</small>
+        </article>
+      </div>
+
+      <div class="buttons">
+        <button class="btn" id="startGPS">INICIAR GPS</button>
+        <button class="btn secondary" id="stopGPS" disabled>DETENER</button>
+      </div>
+
+      <article class="panel angular test-panel">
+        <div class="test-title">
+          <div>
+            <span style="color:#d64da9">▰▰</span>
+            <h3>MODO DE PRUEBAS</h3>
+            <small>SIMULACIÓN DE VELOCIDAD GPS</small>
+          </div>
+          <span class="code">TEST / 01</span>
+        </div>
+
+        <div class="test-controls">
+          <button class="btn" id="testToggle" style="padding:9px 12px;font-size:10px">
+            ACTIVAR SIMULACIÓN
+          </button>
+          <strong class="test-speed"><span id="testSpeedValue">0</span> <small>KM/H</small></strong>
+        </div>
+
+        <input type="range" id="testSpeed" min="0" max="300" value="0">
+
+        <div class="range-labels">
+          <span>0 KM/H</span><span>150</span><span>300 KM/H</span>
+        </div>
+
+        <div class="test-status" id="testStatus">
+          ● SIMULACIÓN DESACTIVADA
+        </div>
+      </article>
+    </section>
+
+    <section class="page" id="laps">
+      <article class="panel sub-panel">
+        <div class="eyebrow">GPS DRIVE / TRACK</div>
+        <h2>LAP TIME</h2>
+        <div class="lap-clock" id="lapClock">00:00.00</div>
+        <div class="lap-buttons">
+          <button class="btn" id="lapStart">INICIAR</button>
+          <button class="btn secondary" id="lapMark">VUELTA</button>
+          <button class="btn secondary" id="lapStop">DETENER</button>
+        </div>
+        <div class="data-list" id="lapList">
+          <p class="empty">Todavía no hay vueltas registradas.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="page" id="gps">
+      <article class="panel sub-panel">
+        <div class="eyebrow">GPS DRIVE / POSITION</div>
+        <h2>DATOS GPS</h2>
+        <div class="coordinates">
+          <div><small>LATITUD</small><strong id="latitude">--</strong></div>
+          <div><small>LONGITUD</small><strong id="longitude">--</strong></div>
+          <div><small>ALTITUD</small><strong id="altitude">--</strong></div>
+        </div>
+        <button class="btn" id="saveCheckpoint">GUARDAR CHECKPOINT</button>
+        <div class="data-list" id="checkpoints">
+          <p class="empty">No hay checkpoints guardados.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="page" id="settings">
+      <article class="panel sub-panel">
+        <div class="eyebrow">GPS DRIVE / CONFIGURATION</div>
+        <h2>AJUSTES</h2>
+        <label class="setting-label" for="speedLimit">LÍMITE DE VELOCIDAD (KM/H)</label>
+        <input type="number" id="speedLimit" min="1" max="300" value="120">
+        <button class="btn" id="saveSettings">GUARDAR AJUSTES</button>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    GPS DRIVE <span>PERFORMANCE SYSTEM</span> <b>V1.0</b>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const clamp = (v,min,max) => Math.max(min,Math.min(max,v));
+
+  let speed = 0;
+  let maxSpeed = 0;
+  let speedTotal = 0;
+  let speedSamples = 0;
+  let distance = 0;
+  let lastPosition = null;
+  let watchId = null;
+  let gpsActive = false;
+  let simulation = false;
+  let tripStart = null;
+  let tripTimer = null;
+  let limit = Number(localStorage.getItem('gpsDriveLimit')) || 120;
+
+  let lapRunning = false;
+  let lapStartTime = 0;
+  let lapInterval = null;
+  let lapNumber = 0;
+  let checkpoints = [];
+
+  // VELOCÍMETRO ANGULAR
+  const points = [
+    {x:30,y:180},
+    {x:174,y:72},
+    {x:534,y:72}
+  ];
+
+  const samples = [];
+  let totalLength = 0;
+
+  function buildGauge() {
+    samples.length = 0;
+    totalLength = 0;
+
+    for(let segment=0;segment<2;segment++) {
+      const a=points[segment];
+      const b=points[segment+1];
+      const length=Math.hypot(b.x-a.x,b.y-a.y);
+      const steps=Math.ceil(length/2);
+
+      for(let i=0;i<=steps;i++) {
+        if(segment>0 && i===0) continue;
+
+        const t=i/steps;
+        const x=a.x+(b.x-a.x)*t;
+        const y=a.y+(b.y-a.y)*t;
+
+        if(samples.length) {
+          const p=samples[samples.length-1];
+          totalLength+=Math.hypot(x-p.x,y-p.y);
+        }
+
+        samples.push({x,y,d:totalLength});
+      }
+    }
+  }
+
+  function thickness(d) {
+    const t=d/totalLength;
+    return 7+9*Math.sin(Math.PI*t*.72);
+  }
+
+  function ribbon(distanceToDraw) {
+    const pts=samples.filter(p=>p.d<=distanceToDraw);
+    const next=samples.find(p=>p.d>distanceToDraw);
+    if(next) pts.push(next);
+    if(pts.length<2) return '';
+
+    const left=[];
+    const right=[];
+
+    pts.forEach((p,i)=>{
+      const prev=pts[Math.max(0,i-1)];
+      const next=pts[Math.min(pts.length-1,i+1)];
+      const dx=next.x-prev.x;
+      const dy=next.y-prev.y;
+      const len=Math.hypot(dx,dy)||1;
+      const nx=-dy/len;
+      const ny=dx/len;
+      const w=thickness(p.d)/2;
+
+      left.push([p.x+nx*w,p.y+ny*w]);
+      right.push([p.x-nx*w,p.y-ny*w]);
+    });
+
+    return 'M'+left.map(p=>p.join(',')).join(' L')+
+      ' L'+right.reverse().map(p=>p.join(',')).join(' L')+' Z';
+  }
+
+  function drawGauge(value) {
+    $('gaugeBackground').setAttribute('d',ribbon(totalLength));
+    $('gaugeProgress').setAttribute(
+      'd',
+      ribbon(totalLength*clamp(value/300,0,1))
+    );
+    $('speedNumber').textContent=Math.round(value);
+  }
+
+  function updateSpeed(value,accuracy='--') {
+    speed=clamp(Number(value)||0,0,300);
+
+    drawGauge(speed);
+
+    $('accuracy').textContent=
+      accuracy==='--'?'--':Math.round(accuracy)+' m';
+
+    if(speed>maxSpeed) {
+      maxSpeed=speed;
+      $('maximum').textContent=Math.round(maxSpeed);
+      $('maxInline').textContent=Math.round(maxSpeed);
+    }
+
+    if(speed>0) {
+      speedTotal+=speed;
+      speedSamples++;
+    }
+
+    $('average').textContent=
+      speedSamples?Math.round(speedTotal/speedSamples):0;
+
+    $('limitStatus').textContent=
+      speed>limit?'● LÍMITE SUPERADO':'● DENTRO DEL LÍMITE';
+
+    $('limitStatus').classList.toggle('exceeded',speed>limit);
+  }
+
+  // NAVEGACIÓN
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(t=>
+        t.classList.toggle('active',t===tab)
+      );
+      document.querySelectorAll('.page').forEach(p=>
+        p.classList.toggle('active',p.id===tab.dataset.page)
+      );
+    });
+  });
+
+  function formatTime(ms,centiseconds=false) {
+    const total=Math.floor(Math.max(0,ms)/1000);
+    const h=Math.floor(total/3600);
+    const m=Math.floor(total%3600/60);
+    const s=total%60;
+
+    if(centiseconds) {
+      return String(Math.floor(total/60)).padStart(2,'0')+':'+
+        String(s).padStart(2,'0')+'.'+
+        String(Math.floor(ms%1000/10)).padStart(2,'0');
+    }
+
+    return [h,m,s].map(v=>String(v).padStart(2,'0')).join(':');
+  }
+
+  function updateTrip() {
+    if(tripStart) {
+      $('duration').textContent=formatTime(Date.now()-tripStart);
+    }
+  }
+
+  // GPS
+  function calculateDistance(a,b) {
+    const R=6371;
+    const rad=v=>v*Math.PI/180;
+    const dLat=rad(b.latitude-a.latitude);
+    const dLon=rad(b.longitude-a.longitude);
+
+    const x=Math.sin(dLat/2)**2+
+      Math.cos(rad(a.latitude))*Math.cos(rad(b.latitude))*
+      Math.sin(dLon/2)**2;
+
+    return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+  }
+
+  function processPosition(position) {
+    const c=position.coords;
+
+    updateSpeed(c.speed==null?0:c.speed*3.6,c.accuracy);
+
+    $('latitude').textContent=c.latitude.toFixed(6);
+    $('longitude').textContent=c.longitude.toFixed(6);
+    $('altitude').textContent=c.altitude==null?'--':Math.round(c.altitude)+' m';
+
+    if(lastPosition) {
+      const d=calculateDistance(lastPosition,c);
+      if(d<1) distance+=d;
+      $('distance').textContent=distance.toFixed(2);
+    }
+
+    lastPosition={latitude:c.latitude,longitude:c.longitude};
+  }
+
+  function gpsError(error) {
+    const messages={
+      1:'PERMISO GPS DENEGADO',
+      2:'GPS NO DISPONIBLE',
+      3:'TIEMPO DE ESPERA GPS'
+    };
+    $('gpsStatus').innerHTML='<i></i> '+(messages[error.code]||'ERROR GPS');
+    $('gpsStatus').classList.remove('connected');
+  }
+
+  function startGPS() {
+    if(simulation) toggleSimulation(false);
+    if(!navigator.geolocation) {
+      $('gpsStatus').innerHTML='<i></i> GPS NO DISPONIBLE';
+      return;
+    }
+    if(gpsActive) return;
+
+    gpsActive=true;
+    lastPosition=null;
+    tripStart=tripStart||Date.now();
+    tripTimer=setInterval(updateTrip,500);
+
+    $('gpsStatus').innerHTML='<i></i> BUSCANDO GPS';
+    $('startGPS').disabled=true;
+    $('stopGPS').disabled=false;
+
+    watchId=navigator.geolocation.watchPosition(
+      processPosition,
+      gpsError,
+      {enableHighAccuracy:true,maximumAge:1000,timeout:15000}
+    );
+  }
+
+  function stopGPS() {
+    if(watchId!==null) navigator.geolocation.clearWatch(watchId);
+    watchId=null;
+    gpsActive=false;
+    clearInterval(tripTimer);
+
+    $('gpsStatus').innerHTML='<i></i> GPS DESCONECTADO';
+    $('gpsStatus').classList.remove('connected');
+    $('startGPS').disabled=false;
+    $('stopGPS').disabled=true;
+    updateSpeed(0);
+  }
+
+  $('startGPS').addEventListener('click',startGPS);
+  $('stopGPS').addEventListener('click',stopGPS);
+
+  // SIMULACIÓN
+  function toggleSimulation(force) {
+    simulation=typeof force==='boolean'?force:!simulation;
+
+    if(simulation) {
+      if(gpsActive) stopGPS();
+
+      $('testToggle').textContent='DESACTIVAR SIMULACIÓN';
+      $('testStatus').textContent='● SIMULACIÓN ACTIVADA';
+      $('testStatus').classList.add('enabled');
+      $('gpsStatus').innerHTML='<i></i> MODO SIMULACIÓN';
+      $('gpsStatus').classList.add('connected');
+      updateSpeed(Number($('testSpeed').value));
+    } else {
+      $('testToggle').textContent='ACTIVAR SIMULACIÓN';
+      $('testStatus').textContent='● SIMULACIÓN DESACTIVADA';
+      $('testStatus').classList.remove('enabled');
+      $('gpsStatus').innerHTML='<i></i> GPS DESCONECTADO';
+      $('gpsStatus').classList.remove('connected');
+      updateSpeed(0);
+    }
+  }
+
+  $('testToggle').addEventListener('click',()=>toggleSimulation());
+
+  $('testSpeed').addEventListener('input',e=>{
+    const value=Number(e.target.value);
+    $('testSpeedValue').textContent=value;
+    if(simulation) updateSpeed(value);
+  });
+
+  // VUELTAS
+  $('lapStart').addEventListener('click',()=>{
+    if(lapRunning) return;
+    lapRunning=true;
+    lapStartTime=Date.now();
+
+    lapInterval=setInterval(()=>{
+      $('lapClock').textContent=
+        formatTime(Date.now()-lapStartTime,true);
+    },30);
+  });
+
+  $('lapMark').addEventListener('click',()=>{
+    if(!lapRunning) return;
+
+    lapNumber++;
+    const elapsed=Date.now()-lapStartTime;
+
+    const row=document.createElement('div');
+    row.className='data-row';
+
+    const name=document.createElement('span');
+    name.textContent='VUELTA '+String(lapNumber).padStart(2,'0');
+
+    const time=document.createElement('strong');
+    time.textContent=formatTime(elapsed,true);
+
+    row.append(name,time);
+    $('lapList').querySelector('.empty')?.remove();
+    $('lapList').prepend(row);
+
+    lapStartTime=Date.now();
+  });
+
+  $('lapStop').addEventListener('click',()=>{
+    lapRunning=false;
+    clearInterval(lapInterval);
+  });
+
+  // CHECKPOINTS
+  function renderCheckpoints() {
+    const box=$('checkpoints');
+    box.innerHTML='';
+
+    if(!checkpoints.length) {
+      box.innerHTML='<p class="empty">No hay checkpoints guardados.</p>';
+      return;
+    }
+
+    checkpoints.forEach((p,i)=>{
+      const row=document.createElement('div');
+      row.className='data-row';
+
+      const label=document.createElement('span');
+      label.textContent='CHECKPOINT '+(i+1)+' · '+p.lat.toFixed(5)+', '+p.lon.toFixed(5);
+
+      const button=document.createElement('button');
+      button.className='btn secondary';
+      button.textContent='ELIMINAR';
+      button.style.padding='6px';
+
+      button.addEventListener('click',()=>{
+        checkpoints.splice(i,1);
+        localStorage.setItem('gpsDriveCheckpoints',JSON.stringify(checkpoints));
+        renderCheckpoints();
+      });
+
+      row.append(label,button);
+      box.append(row);
+    });
+  }
+
+  try {
+    checkpoints=JSON.parse(localStorage.getItem('gpsDriveCheckpoints')||'[]');
+  } catch(e) {
+    checkpoints=[];
+  }
+
+  $('saveCheckpoint').addEventListener('click',()=>{
+    if(!lastPosition) {
+      $('gpsStatus').innerHTML='<i></i> ESPERANDO POSICIÓN GPS';
+      return;
+    }
+
+    checkpoints.push({
+      lat:lastPosition.latitude,
+      lon:lastPosition.longitude
+    });
+
+    localStorage.setItem('gpsDriveCheckpoints',JSON.stringify(checkpoints));
+    renderCheckpoints();
+  });
+
+  // AJUSTES
+  $('limitValue').textContent=limit;
+  $('speedLimit').value=limit;
+
+  $('saveSettings').addEventListener('click',()=>{
+    limit=clamp(Number($('speedLimit').value)||120,1,300);
+    $('speedLimit').value=limit;
+    $('limitValue').textContent=limit;
+    localStorage.setItem('gpsDriveLimit',String(limit));
+    updateSpeed(speed);
+  });
+
+  // INICIO
+  buildGauge();
+  renderCheckpoints();
+  drawGauge(0);
+  updateSpeed(0);
+})();
+</script>
+
+</body>
+</html>
