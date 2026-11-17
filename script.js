@@ -698,6 +698,132 @@
   bindButton('radiusMinus',() => { checkpointRadius = clamp(checkpointRadius - 5,5,100); saveSettings(); });
   bindButton('radiusPlus',() => { checkpointRadius = clamp(checkpointRadius + 5,5,100); saveSettings(); });
 
+  let keyboardTarget = null;
+  let keyboardType = 'numeric';
+  let keyboardDraft = '';
+  let keyboardReplaceNext = true;
+  let keyboardValidator = null;
+  let keyboardCommitter = null;
+
+  function updateKeyboardPreview() {
+    $('keyboardPreview').textContent = keyboardDraft || '-';
+  }
+  function closeConfigurationKeyboard() {
+    const target = keyboardTarget;
+    $('configKeyboard').style.display = 'none';
+    $('configKeyboard').setAttribute('aria-hidden','true');
+    $('keyboardMessage').textContent = '';
+    if (target) {
+      target.setAttribute('aria-expanded','false');
+      if (typeof target.focus === 'function') target.focus();
+    }
+    keyboardTarget = null; keyboardValidator = null; keyboardCommitter = null;
+  }
+  function addKeyboardKey(id,label,value,x,y,width,height,kind = '',ariaLabel = label) {
+    const key = makeSvg('g');
+    key.setAttribute('id',id); key.setAttribute('class','keyboard-key interactive' + (kind ? ' is-' + kind : ''));
+    key.setAttribute('role','button'); key.setAttribute('tabindex','0'); key.setAttribute('aria-label',ariaLabel);
+    const rect = makeSvg('rect');
+    rect.setAttribute('x',x); rect.setAttribute('y',y); rect.setAttribute('width',width); rect.setAttribute('height',height); rect.setAttribute('rx','7');
+    const text = textNode(x + width / 2,y + height / 2 + (height > 58 ? 11 : 8),label,'keyboard-key-label','middle');
+    key.append(rect,text); $('keyboardKeys').append(key);
+    bindButton(id,() => {
+      if (value === 'CANCEL') { closeConfigurationKeyboard(); return; }
+      if (value === 'CONFIRM') { confirmConfigurationKeyboard(); return; }
+      if (value === 'BACKSPACE') { eraseKeyboardCharacter(); return; }
+      appendKeyboardCharacter(value);
+    });
+  }
+  function drawConfigurationKeyboard() {
+    const keys = $('keyboardKeys'); keys.replaceChildren();
+    const panel = $('keyboardPanel');
+    const divider = $('keyboardDivider');
+    if (keyboardType === 'numeric') {
+      panel.setAttribute('d','M640 135 665 110H935L960 135V665L935 690H665L640 665Z');
+      divider.setAttribute('d','M666 184H934');
+      for (let value = 1; value <= 9; value++) {
+        const row = Math.floor((value - 1) / 3), column = (value - 1) % 3;
+        addKeyboardKey('keyboard-digit-' + value,String(value),String(value),653 + column * 102,245 + row * 98,90,90);
+      }
+      addKeyboardKey('keyboard-cancel','X','CANCEL',650,548,90,90,'cancel','Cancelar y descartar cambios');
+      addKeyboardKey('keyboard-digit-0','0','0',750,548,100,90);
+      addKeyboardKey('keyboard-confirm','✓','CONFIRM',860,548,90,90,'confirm','Validar y guardar');
+    } else {
+      panel.setAttribute('d','M420 135 445 110H1155L1180 135V665L1155 690H445L420 665Z');
+      divider.setAttribute('d','M466 184H1134');
+      const rows = [
+        ['1','2','3','4','5','6','7','8','9','0'],
+        ['Q','W','E','R','T','Y','U','I','O','P'],
+        ['A','S','D','F','G','H','J','K','L'],
+        ['Z','X','C','V','B','N','M','⌫']
+      ];
+      rows.forEach((row,rowIndex) => {
+        const width = 52, gap = 7, total = row.length * width + (row.length - 1) * gap;
+        const startX = 800 - total / 2;
+        row.forEach((value,column) => {
+          const backspace = value === '⌫';
+          const keyValue = backspace ? 'BACKSPACE' : value;
+          addKeyboardKey('keyboard-alpha-' + rowIndex + '-' + column,backspace ? 'Borrar carácter' : value,keyValue,
+            startX + column * (width + gap),252 + rowIndex * 60,width,50,backspace ? 'cancel' : '');
+        });
+      });
+      addKeyboardKey('keyboard-cancel','X','CANCEL',628,526,76,68,'cancel','Cancelar y descartar cambios');
+      addKeyboardKey('keyboard-space','Espacio','SPACE',716,526,168,68,'space');
+      addKeyboardKey('keyboard-confirm','✓','CONFIRM',896,526,76,68,'confirm','Validar y guardar');
+    }
+    $('keyboardTitle').textContent = keyboardTarget.getAttribute('data-keyboard-label') || 'CONFIGURAR VALOR';
+    updateKeyboardPreview();
+    $('keyboardMessage').textContent = '';
+  }
+  function openConfigurationKeyboard(field,options = {}) {
+    keyboardTarget = field;
+    keyboardType = field.getAttribute('data-keyboard-type') === 'numeric' ? 'numeric' : 'alphanumeric';
+    keyboardDraft = String(options.value ?? field.textContent ?? '').trim();
+    keyboardReplaceNext = true;
+    keyboardValidator = options.validate || (value => keyboardType === 'numeric' && !/^\d{1,3}$/.test(value)
+      ? 'INTRODUCE UN VALOR NUMÉRICO' : '');
+    keyboardCommitter = options.commit || (value => { field.textContent = value; });
+    field.setAttribute('aria-expanded','true'); field.setAttribute('aria-controls','configKeyboard');
+    $('configKeyboard').style.display = 'inline';
+    $('configKeyboard').setAttribute('aria-hidden','false');
+    drawConfigurationKeyboard();
+    const firstKey = $('keyboardKeys').querySelector('.keyboard-key');
+    if (firstKey && typeof firstKey.focus === 'function') firstKey.focus();
+  }
+  function appendKeyboardCharacter(character) {
+    if (keyboardReplaceNext) { keyboardDraft = ''; keyboardReplaceNext = false; }
+    if (keyboardType === 'numeric' && !/^\d$/.test(character)) return;
+    const next = character === 'SPACE' ? ' ' : character;
+    const maxLength = keyboardType === 'numeric' ? 3 : 32;
+    if (keyboardDraft.length >= maxLength) return;
+    keyboardDraft += next;
+    updateKeyboardPreview(); $('keyboardMessage').textContent = '';
+  }
+  function eraseKeyboardCharacter() {
+    if (keyboardReplaceNext) { keyboardDraft = ''; keyboardReplaceNext = false; }
+    else keyboardDraft = Array.from(keyboardDraft).slice(0,-1).join('');
+    updateKeyboardPreview(); $('keyboardMessage').textContent = '';
+  }
+  function confirmConfigurationKeyboard() {
+    const error = keyboardValidator ? keyboardValidator(keyboardDraft) : '';
+    if (error) { $('keyboardMessage').textContent = error; return; }
+    const target = keyboardTarget, commit = keyboardCommitter, value = keyboardDraft;
+    if (commit) commit(value,target);
+    closeConfigurationKeyboard();
+  }
+  $('configKeyboard').addEventListener('keydown',event => {
+    if (event.key === 'Escape') { event.preventDefault(); closeConfigurationKeyboard(); }
+  });
+  bindButton('limitReadout',() => openConfigurationKeyboard($('limitReadout'),{
+    value:String(limit),
+    validate:value => {
+      if (!/^\d{1,3}$/.test(value)) return 'INTRODUCE UN VALOR ENTRE 1 Y 300';
+      const numericValue = Number(value);
+      return numericValue < 1 || numericValue > 300 ? 'EL LÍMITE DEBE SER DE 1 A 300 KM/H' : '';
+    },
+    commit:value => { limit = Number(value); saveSettings(); }
+  }));
+
   function normalizeCheckpoints(raw) {
     if (!Array.isArray(raw)) return [];
     return raw.filter(point => Number.isFinite(Number(point.lat ?? point.latitude)) && Number.isFinite(Number(point.lon ?? point.longitude)))

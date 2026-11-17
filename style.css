@@ -62,3 +62,18 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .page-separator{stroke:#173c56;stroke-width:1.2}
 .dynamic-row{cursor:pointer}
 .dynamic-row:focus-visible{filter:drop-shadow(0 0 5px #18baff)}
+.config-keyboard .keyboard-backdrop{fill:#01050b;fill-opacity:.42}
+.keyboard-panel{fill:#031225;fill-opacity:.72;stroke:url(#frameEdge);stroke-width:3;filter:url(#deepShadow)}
+.keyboard-title{fill:#9cc7e4;font-size:25px;font-weight:1000;letter-spacing:1px;stroke:#9cc7e4;stroke-width:.35px}
+.keyboard-divider{stroke:#1c5276;stroke-width:1.5}
+.keyboard-preview{fill:#f2f7fc;font-size:48px;font-weight:1000;letter-spacing:1px;stroke:#f2f7fc;stroke-width:.55px}
+.keyboard-message{fill:#ff7b89;font-size:17px;font-weight:900;letter-spacing:.4px;stroke:#ff7b89;stroke-width:.2px}
+.keyboard-key{cursor:pointer;touch-action:manipulation;pointer-events:all}
+.keyboard-key rect{fill:#062342;fill-opacity:.76;stroke:#1684c7;stroke-opacity:.86;stroke-width:2;transition:fill-opacity .12s,stroke .12s,filter .12s}
+.keyboard-key:focus-visible rect,.keyboard-key:hover rect{fill:#0a4c82;fill-opacity:.94;stroke:#34c9ff;filter:drop-shadow(0 0 7px #08aaff80)}
+.keyboard-key-label{fill:#e0edf7;fill-opacity:.98;font-size:31px;font-weight:900;letter-spacing:.2px;stroke:#e0edf7;stroke-width:.35px;pointer-events:none}
+.keyboard-key.is-cancel rect{stroke:#9c4059;stroke-opacity:.82}
+.keyboard-key.is-cancel .keyboard-key-label{fill:#f099a5;stroke:#f099a5}
+.keyboard-key.is-confirm rect{stroke:#00aee7;stroke-opacity:.95;fill:#063456}
+.keyboard-key.is-confirm .keyboard-key-label{fill:#9deaff;stroke:#9deaff}
+.keyboard-key.is-space .keyboard-key-label{font-size:17px}

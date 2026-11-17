@@ -237,7 +237,7 @@
         <text x="99" y="260" class="panel-title">AJUSTES DE CONDUCCIÓN</text>
         <path d="M82 303 106 280H782L804 302V721L782 744H106L82 721Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
         <text x="122" y="331" class="page-label">LÍMITE DE VELOCIDAD</text>
-        <text id="limitReadout" x="120" y="410" class="setting-value">120</text><text x="270" y="408" class="limit-unit">KM/H</text>
+        <text id="limitReadout" x="120" y="410" class="setting-value interactive" role="button" tabindex="0" aria-label="Editar límite de velocidad" data-keyboard-type="numeric" data-keyboard-label="LÍMITE DE VELOCIDAD">120</text><text x="270" y="408" class="limit-unit">KM/H</text>
         <g id="limitMinus" class="interactive svg-button" role="button" tabindex="0" aria-label="Bajar límite">
           <path d="M438 356H554L540 395H424Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/>
           <text x="489" y="384" text-anchor="middle" class="button-text button-dim">−</text>
@@ -279,6 +279,16 @@
         <text id="finishCheckpointValue" x="888" y="604" class="page-value page-value-small">NO CONFIGURADA</text>
         <text x="888" y="640" class="page-small">MARCA UN CHECKPOINT COMO META EN LA PESTAÑA GPS</text>
         <text x="888" y="700" class="page-small">AJUSTES GUARDADOS LOCALMENTE</text>
+      </g>
+
+      <g id="configKeyboard" class="config-keyboard" style="display:none" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="keyboardTitle">
+        <rect class="keyboard-backdrop" x="0" y="0" width="1600" height="800"/>
+        <path id="keyboardPanel" class="keyboard-panel" d="M640 135 665 110H935L960 135V665L935 690H665L640 665Z"/>
+        <text id="keyboardTitle" x="800" y="162" text-anchor="middle" class="keyboard-title">LÍMITE DE VELOCIDAD</text>
+        <path id="keyboardDivider" d="M666 184H934" class="keyboard-divider"/>
+        <text id="keyboardPreview" x="800" y="232" text-anchor="middle" class="keyboard-preview">120</text>
+        <text id="keyboardMessage" x="800" y="657" text-anchor="middle" class="keyboard-message"></text>
+        <g id="keyboardKeys"></g>
       </g>
     </svg>
   </main>
