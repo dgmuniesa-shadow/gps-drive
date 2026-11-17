@@ -221,15 +221,25 @@
 
   function bindButton(id,handler) {
     const element = $(id);
-    element.addEventListener('click',event => {
+    let lastActivation = 0;
+    const activate = event => {
       if (element.getAttribute('aria-disabled') === 'true') return;
-      event.preventDefault();
+      lastActivation = Date.now();
       handler(event);
+    };
+    element.addEventListener('pointerup',event => {
+      if (event.isPrimary === false || (event.button != null && event.button !== 0)) return;
+      activate(event);
+    });
+    element.addEventListener('click',event => {
+      event.preventDefault();
+      if (Date.now() - lastActivation < 700) return;
+      activate(event);
     });
     element.addEventListener('keydown',event => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();
-      if (element.getAttribute('aria-disabled') !== 'true') handler(event);
+      if (Date.now() - lastActivation >= 700) activate(event);
     });
   }
 

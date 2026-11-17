@@ -33,7 +33,7 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .sim-caption{fill:#91b5d4;font-size:24px;font-weight:950;letter-spacing:.5px;stroke:#91b5d4;stroke-width:.4px}
 .sim-value{fill:#f5f7fc;font-size:34px;font-weight:1000;letter-spacing:.5px;stroke:#f5f7fc;stroke-width:.5px}
 .sim-status{fill:#6389ad;font-size:25px;font-weight:950;letter-spacing:.65px;stroke:#6389ad;stroke-width:.4px}
-.interactive{cursor:pointer;touch-action:manipulation}
+.interactive{cursor:pointer;touch-action:manipulation;pointer-events:all;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .interactive:focus-visible{filter:drop-shadow(0 0 8px #20bcff)}
 .svg-button.is-disabled{pointer-events:none}
 .gps-status.is-connected .status-lamp{fill:#00ef91}
