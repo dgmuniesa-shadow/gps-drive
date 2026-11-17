@@ -72,6 +72,36 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .track-use-shape{fill:#041b32;fill-opacity:.92;stroke:#1684c7;stroke-width:1.5}
 .track-use-button:hover .track-use-shape,.track-use-button:focus-visible .track-use-shape{fill:#07528b;stroke:#2acaff;filter:drop-shadow(0 0 4px #08aaff)}
 .track-use-label{fill:#9dc8e5;font-size:13px;font-weight:950;letter-spacing:.25px;pointer-events:none}
+.track-remove-button:hover path{stroke:#ff4d6b;filter:drop-shadow(0 0 5px #ff2949)}
+.draft-checkpoint-name{cursor:pointer}
+.draft-checkpoint-name:hover,.draft-checkpoint-name:focus-visible{fill:#4fc9ff;stroke:#4fc9ff}
+.track-select-button{cursor:pointer}
+.track-select-shape{fill:#04182c;fill-opacity:.94;stroke:#1676b5;stroke-width:1.7}
+.track-select-button:hover .track-select-shape,.track-select-button:focus-visible .track-select-shape{fill:#08436d;stroke:#31caff;filter:drop-shadow(0 0 4px #08aaff)}
+.track-select-label{fill:#c0d7e8;font-size:17px;font-weight:950;letter-spacing:.35px;stroke:#c0d7e8;stroke-width:.25px;pointer-events:none}
+.track-select-arrow{fill:none;stroke:#43caff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.track-load-button{cursor:pointer}
+.track-load-shape{fill:url(#blueButton);stroke:#0bbcff;stroke-width:1.7}
+.track-load-button:hover .track-load-shape,.track-load-button:focus-visible .track-load-shape{filter:drop-shadow(0 0 6px #08aaff)}
+.track-load-button.is-disabled{pointer-events:none;opacity:.42}
+.track-dropdown-backdrop{fill:#031326;fill-opacity:.98;stroke:url(#frameEdge);stroke-width:2;filter:url(#deepShadow);pointer-events:none}
+.track-dropdown-option{cursor:pointer}
+.track-dropdown-option-shape{fill:#061a30;fill-opacity:.97;stroke:#174363;stroke-width:1}
+.track-dropdown-option:hover .track-dropdown-option-shape,.track-dropdown-option:focus-visible .track-dropdown-option-shape{fill:#07518a;stroke:#2acaff}
+.track-dropdown-option-shape.is-current{fill:#0a3c63;stroke:#168fd0}
+.track-dropdown-option-label{fill:#d2e6f4;font-size:17px;font-weight:900;letter-spacing:.25px;pointer-events:none}
+.track-dropdown-scroll{fill:none;stroke:#16a9ee;stroke-width:5;stroke-linecap:round;opacity:.85;pointer-events:none}
+.result-incomplete{fill:#ff5265;stroke:#ff5265}
+.track-confirm-message{fill:#c8deed;font-size:28px;font-weight:1000;letter-spacing:.25px;stroke:#c8deed;stroke-width:.35px}
+.track-confirm-warning{fill:#ff5369;font-size:25px;font-weight:1000;letter-spacing:.3px;stroke:#ff5369;stroke-width:.35px}
+.track-confirm-button{cursor:pointer}
+.track-confirm-shape{fill:#06365a;stroke:#14aee9;stroke-width:2}
+.track-confirm-label{fill:#c9e6f6;font-size:23px;font-weight:1000;letter-spacing:.4px;stroke:#c9e6f6;stroke-width:.35px;pointer-events:none}
+.track-confirm-button:hover .track-confirm-shape,.track-confirm-button:focus-visible .track-confirm-shape{fill:#08639a;stroke:#4ad5ff;filter:drop-shadow(0 0 6px #08aaff)}
+.track-confirm-button.is-danger .track-confirm-shape{fill:#401526;stroke:#fa3151}
+.track-confirm-button.is-danger .track-confirm-label{fill:#ff7b8c;stroke:#ff7b8c}
+.track-confirm-button.is-save .track-confirm-shape{fill:#082e42;stroke:#00c9b0}
+.track-confirm-button.is-save .track-confirm-label{fill:#87f2d9;stroke:#87f2d9}
 .dynamic-row{cursor:pointer}
 .dynamic-row:focus-visible{filter:drop-shadow(0 0 5px #18baff)}
 .config-keyboard .keyboard-backdrop{fill:#01050b;fill-opacity:.42}

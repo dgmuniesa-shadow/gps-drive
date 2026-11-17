@@ -81,6 +81,13 @@
   let activeTrackRun = null;
   let trackStartNearby = false;
   let trackFinishNearby = false;
+  let pendingTrackConfirmation = null;
+  let selectedLapPickerId = '';
+  let resultsFilterId = 'best';
+  let dropdownStates = {
+    lap:{offset:0,maxOffset:0,drag:null},
+    results:{offset:0,maxOffset:0,drag:null}
+  };
   let sessionHistory = [];
   let lapEntries = [];
   let lapNumber = 0;
@@ -272,7 +279,7 @@
       else shape.removeAttribute('filter');
       tab.setAttribute('aria-current',active ? 'page' : 'false');
     });
-    if (page === 'gps') { renderTrackDraft(); renderTrackList(); renderTrackResults(); }
+    if (page === 'gps') { renderTrackDraft(); renderTrackList(); renderTrackResults(); renderTrackPickers(); }
     if (page === 'laps') renderLaps();
   }
 
@@ -573,8 +580,8 @@
     setDisabled('lapStart',false); setDisabled('lapStop',true);
     if (lapStartedBy === 'TRACK GPS') {
       activeTrackRun = null; trackStartNearby = false; trackFinishNearby = false;
-      lapStartedBy = '';
     }
+    lapStartedBy = '';
   }
   function resetLap() {
     stopLap(); lapNumber = 0; lapEntries = [];
@@ -583,13 +590,13 @@
   }
   bindButton('lapStart',() => startLap('MANUAL'));
   bindButton('lapMark',() => markLap(Date.now(),'MANUAL'));
-  bindButton('lapStop',stopLap);
-  bindButton('lapReset',resetLap);
+  bindButton('lapStop',() => lapStartedBy === 'TRACK GPS' ? openTrackConfirmation(getActiveTrack()) : stopLap());
+  bindButton('lapReset',() => lapStartedBy === 'TRACK GPS' ? openTrackConfirmation(getActiveTrack()) : resetLap());
 
   const trackScrollers = {
     draft:{viewport:'trackDraftViewport',content:'trackDraftContent',thumb:'trackDraftScrollThumb',top:401,bottom:678,x:519,viewportHeight:281,rowHeight:36,offset:0},
     list:{viewport:'trackListViewport',content:'trackListContent',thumb:'trackListScrollThumb',top:373,bottom:707,x:1028,viewportHeight:336,rowHeight:58,offset:0},
-    results:{viewport:'trackResultsViewport',content:'trackResultsContent',thumb:'trackResultsScrollThumb',top:375,bottom:707,x:1524,viewportHeight:333,rowHeight:46,offset:0}
+    results:{viewport:'trackResultsViewport',content:'trackResultsContent',thumb:'trackResultsScrollThumb',top:411,bottom:707,x:1524,viewportHeight:297,rowHeight:46,offset:0}
   };
 
   function bindListAction(element,handler) {
@@ -630,7 +637,7 @@
         if (event.target === thumb) return;
         const point = svgPointFromEvent(event);
         drag.startY = point ? point.y : event.clientY; drag.startOffset = state.offset; drag.active = true; drag.moved = false;
-        if (viewport.setPointerCapture) viewport.setPointerCapture(event.pointerId);
+        if (event.target && event.target.setPointerCapture) event.target.setPointerCapture(event.pointerId);
       });
       viewport.addEventListener('pointermove',event => {
         if (!drag.active) return;
@@ -695,7 +702,9 @@
   function saveTracks() {
     writeStored('gpsDriveTracks',JSON.stringify(tracks));
     writeStored('gpsDriveNextTrackNumber',String(nextTrackNumber));
-    renderTrackList(); renderTrackResults(); updateLapStatus(); updateSettingsView();
+    renderTrackList(); renderTrackResults(); renderTrackPickers(); updateLapStatus(); updateSettingsView();
+    if ($('lapTrackOptions').style.display === 'inline') renderTrackDropdown('lap');
+    if ($('resultsFilterOptions').style.display === 'inline') renderTrackDropdown('results');
   }
   function captureTrackMark() {
     if (!lastPosition || activeSource !== 'gps') {
@@ -703,9 +712,13 @@
       return;
     }
     const index = draftMarks.length;
-    if (index >= 2) draftMarks[index - 1].type = 'CHECKPOINT#' + (index - 1);
+    if (index >= 2) {
+      draftMarks[index - 1].type = 'CHECKPOINT#' + (index - 1);
+      draftMarks[index - 1].isCheckpoint = true;
+    }
     draftMarks.push({
       type:index === 0 ? 'START' : 'FINISH',
+      isCheckpoint:false,
       latitude:lastPosition.latitude,longitude:lastPosition.longitude,
       altitude:lastPosition.altitude,accuracy:lastPosition.accuracy,
       timestamp:lastPosition.timestamp || Date.now(),gpsTimestamp:lastPosition.timestamp
@@ -713,12 +726,34 @@
     $('trackDraftFeedback').textContent = 'MARCA REGISTRADA · ' + draftMarks[draftMarks.length - 1].type;
     renderTrackDraft();
   }
+  function removeLastTrackMark() {
+    if (!draftMarks.length) return;
+    draftMarks.pop();
+    if (draftMarks.length === 1) draftMarks[0].type = 'START';
+    else if (draftMarks.length > 1) {
+      draftMarks[draftMarks.length - 1].type = 'FINISH';
+      draftMarks[draftMarks.length - 1].isCheckpoint = false;
+    }
+    $('trackDraftFeedback').textContent = draftMarks.length ? 'ÚLTIMA MARCA BORRADA' : 'BORRADOR VACÍO';
+    renderTrackDraft();
+  }
   function renderTrackDraft() {
     const content = $('trackDraftContent'); content.replaceChildren();
     if (!draftMarks.length) content.append(textNode(96,448,'ESPERANDO MARCAS GPS REALES','page-small'));
     draftMarks.forEach((mark,index) => {
       const y = 424 + index * trackScrollers.draft.rowHeight;
-      content.append(textNode(96,y,mark.type,'data-row-label'));
+      const label = textNode(96,y,mark.type,'data-row-label' + (mark.isCheckpoint ? ' interactive draft-checkpoint-name' : ''));
+      if (mark.isCheckpoint) {
+        label.setAttribute('id','draftCheckpointName-' + index); label.setAttribute('role','button'); label.setAttribute('tabindex','0');
+        label.setAttribute('aria-label','Editar nombre del checkpoint ' + mark.type); label.setAttribute('data-keyboard-type','alphanumeric');
+        label.setAttribute('textLength','190'); label.setAttribute('lengthAdjust','spacingAndGlyphs');
+        bindListAction(label,() => openConfigurationKeyboard(label,{
+          value:mark.type,
+          validate:value => !value.trim() ? 'EL NOMBRE NO PUEDE ESTAR VACÍO' : value.trim().length > 32 ? 'MÁXIMO 32 CARACTERES' : '',
+          commit:value => { mark.type = value.trim(); $('trackDraftFeedback').textContent = 'CHECKPOINT RENOMBRADO'; renderTrackDraft(); }
+        }));
+      }
+      content.append(label);
       content.append(textNode(502,y,'GPS · ' + formatStamp(mark.timestamp),'data-row-small','end'));
       if (index < draftMarks.length - 1) {
         const line = makeSvg('path'); line.setAttribute('d','M92 ' + (y + 10) + 'H506'); line.setAttribute('class','page-separator'); content.append(line);
@@ -726,6 +761,7 @@
     });
     $('draftMarkCount').textContent = draftMarks.length + ' MARCAS' + (draftMarks.length < 2 ? ' · NECESITAS 2' : ' · LISTO PARA CREAR');
     setDisabled('createTrack',draftMarks.length < 2);
+    setDisabled('removeTrackMark',draftMarks.length === 0);
     updateScrollerThumb('draft',Math.max(trackScrollers.draft.viewportHeight,draftMarks.length * trackScrollers.draft.rowHeight + 30));
   }
   function renderTrackList() {
@@ -744,7 +780,7 @@
       row.append(textNode(596,y + 22,track.marks.length + ' MARCAS · ' + getTrackDistanceKm(track).toFixed(2) + ' KM','data-row-small'));
       const use = makeSvg('g'); use.setAttribute('id','track-use-' + track.id); use.setAttribute('class','interactive track-use-button'); use.setAttribute('role','button'); use.setAttribute('tabindex','0'); use.setAttribute('aria-label','Cargar ' + track.name + ' en Lap Time');
       const shape = makeSvg('path'); shape.setAttribute('d','M927 ' + (y - 18) + 'H1018L1008 ' + (y + 10) + 'H917Z'); shape.setAttribute('class','track-use-shape');
-      const label = textNode(967,y + 2,track.id === activeTrackId ? 'ACTIVO' : 'CARGAR','track-use-label','middle'); use.append(shape,label); row.append(use);
+      const label = textNode(967,y + 2,track.id === activeTrackId ? 'DESACTIVAR' : 'ACTIVAR','track-use-label','middle'); use.append(shape,label); row.append(use);
       bindListAction(name,() => openConfigurationKeyboard(name,{
         value:track.name,
         validate:value => {
@@ -761,7 +797,8 @@
           saveTracks();
         }
       }));
-      bindListAction(use,() => selectTrack(track.id));
+      use.setAttribute('aria-label',track.id === activeTrackId ? 'Desactivar ' + track.name + ' de Lap Time' : 'Activar ' + track.name + ' en Lap Time');
+      bindListAction(use,() => track.id === activeTrackId ? openTrackConfirmation(track) : selectTrack(track.id));
       content.append(row);
       if (index < tracks.length - 1) {
         const line = makeSvg('path'); line.setAttribute('d','M590 ' + (y + 33) + 'H1018'); line.setAttribute('class','page-separator'); content.append(line);
@@ -771,19 +808,147 @@
   }
   function renderTrackResults() {
     const content = $('trackResultsContent'); content.replaceChildren();
-    if (!tracks.length) content.append(textNode(1092,413,'SIN TRACKS REGISTRADOS','page-small'));
-    const rows = tracks.map(track => ({track,best:(track.results || []).slice().sort((a,b) => a.lapTimeMs - b.lapTimeMs)[0] || null}))
-      .sort((a,b) => (a.best ? a.best.lapTimeMs : Infinity) - (b.best ? b.best.lapTimeMs : Infinity) || a.track.number - b.track.number);
-    rows.forEach(({track,best},index) => {
-      const y = 397 + index * trackScrollers.results.rowHeight;
-      const name = textNode(1092,y,track.name,'data-row-label'); name.setAttribute('textLength','192'); name.setAttribute('lengthAdjust','spacingAndGlyphs'); content.append(name);
-      content.append(textNode(1360,y,best ? Number(best.routeDistanceKm).toFixed(2) : '--','data-row-label','middle'));
-      content.append(textNode(1500,y,best ? formatTrackClock(best.lapTimeMs) : '--:--:--','data-row-label','end'));
+    const score = result => {
+      const distance = Number(result.routeDistanceKm) || 0;
+      const time = Number(result.lapTimeMs) || 0;
+      return time > 0 ? distance / time : 0;
+    };
+    let rows;
+    if (resultsFilterId === 'best') {
+      rows = tracks.map(track => ({track,result:(track.results || []).filter(result => result.completed !== false)
+        .slice().sort((a,b) => score(b) - score(a))[0] || null}))
+        .filter(row => row.result)
+        .sort((a,b) => score(b.result) - score(a.result) || a.track.number - b.track.number);
+    } else {
+      const track = tracks.find(item => item.id === resultsFilterId);
+      rows = track ? (track.results || []).map(result => ({track,result}))
+        .sort((a,b) => Number(b.result.completed !== false) - Number(a.result.completed !== false) || score(b.result) - score(a.result)) : [];
+    }
+    if (!rows.length) content.append(textNode(1092,452,tracks.length ? 'SIN RESULTADOS PARA ESTE FILTRO' : 'SIN TRACKS REGISTRADOS','page-small'));
+    rows.forEach(({track,result},index) => {
+      const y = 438 + index * trackScrollers.results.rowHeight;
+      const isIncomplete = result.completed === false;
+      const name = textNode(1092,y,track.name + (isIncomplete ? ' · INCOMPLETO' : ''),isIncomplete ? 'data-row-label result-incomplete' : 'data-row-label');
+      name.setAttribute('textLength','232'); name.setAttribute('lengthAdjust','spacingAndGlyphs'); content.append(name);
+      content.append(textNode(1360,y,Number(result.routeDistanceKm || 0).toFixed(2),isIncomplete ? 'data-row-label result-incomplete' : 'data-row-label','middle'));
+      content.append(textNode(1500,y,formatTrackClock(result.lapTimeMs),isIncomplete ? 'data-row-label result-incomplete' : 'data-row-label','end'));
       if (index < rows.length - 1) {
         const line = makeSvg('path'); line.setAttribute('d','M1088 ' + (y + 12) + 'H1516'); line.setAttribute('class','page-separator'); content.append(line);
       }
     });
-    updateScrollerThumb('results',Math.max(trackScrollers.results.viewportHeight,rows.length * trackScrollers.results.rowHeight));
+    updateScrollerThumb('results',Math.max(trackScrollers.results.viewportHeight,rows.length * trackScrollers.results.rowHeight + 28));
+    renderResultFilterLabel();
+  }
+  const dropdownConfig = {
+    lap:{group:'lapTrackOptions',clip:'url(#lapTrackOptionsClip)',x:105,y:365,width:477,height:330,rowHeight:36,kind:'lap'},
+    results:{group:'resultsFilterOptions',clip:'url(#resultsFilterOptionsClip)',x:1088,y:376,width:428,height:330,rowHeight:34,kind:'results'}
+  };
+  function closeTrackDropdown(kind) {
+    const config = dropdownConfig[kind];
+    $(config.group).style.display = 'none'; $(config.group).setAttribute('aria-hidden','true');
+    $(kind === 'lap' ? 'lapTrackSelect' : 'resultsFilter').setAttribute('aria-expanded','false');
+  }
+  function renderResultFilterLabel() {
+    const track = tracks.find(item => item.id === resultsFilterId);
+    $('resultsFilterLabel').textContent = resultsFilterId === 'best' ? 'MEJOR VUELTA' : track ? track.name : 'MEJOR VUELTA';
+  }
+  function renderTrackPickers() {
+    const track = tracks.find(item => item.id === selectedLapPickerId);
+    $('lapTrackSelectLabel').textContent = track ? track.name : 'SELECCIONAR TRACK';
+    $('lapTrackSelectLabel').setAttribute('textLength','270'); $('lapTrackSelectLabel').setAttribute('lengthAdjust','spacingAndGlyphs');
+    setDisabled('lapTrackLoad',!track);
+    $('lapTrackLoad').setAttribute('aria-label',track ? 'Cargar ' + track.name + ' en Lap Time' : 'Selecciona un track para cargar');
+    renderResultFilterLabel();
+  }
+  function renderTrackDropdown(kind) {
+    const config = dropdownConfig[kind], group = $(config.group);
+    group.replaceChildren(); group.setAttribute('clip-path',config.clip);
+    const backdrop = makeSvg('path');
+    backdrop.setAttribute('d','M' + config.x + ' ' + config.y + 'H' + (config.x + config.width - 10) + 'L' + (config.x + config.width) + ' ' + (config.y + 10) + 'V' + (config.y + config.height - 8) + 'L' + (config.x + config.width - 8) + ' ' + (config.y + config.height) + 'H' + config.x + 'Z');
+    backdrop.setAttribute('class','track-dropdown-backdrop'); group.append(backdrop);
+    const content = makeSvg('g'); content.setAttribute('class','track-dropdown-content'); group.append(content);
+    let options;
+    if (kind === 'lap') options = tracks.map(track => ({id:track.id,label:track.name,action:() => {
+      selectedLapPickerId = track.id; renderTrackPickers(); closeTrackDropdown('lap');
+    }}));
+    else options = [{id:'best',label:'MEJOR VUELTA',action:() => {
+      resultsFilterId = 'best'; closeTrackDropdown('results'); renderTrackResults();
+    }}].concat(tracks.map(track => ({id:track.id,label:track.name,action:() => {
+      resultsFilterId = track.id; closeTrackDropdown('results'); renderTrackResults();
+    }})));
+    if (!options.length) content.append(textNode(config.x + 18,config.y + 34,'NO HAY TRACKS REGISTRADOS','page-small'));
+    options.forEach((option,index) => {
+      const rowY = config.y + 5 + index * config.rowHeight;
+      const item = makeSvg('g'); item.setAttribute('class','interactive track-dropdown-option'); item.setAttribute('role','button'); item.setAttribute('tabindex','0');
+      const selected = kind === 'lap' ? option.id === selectedLapPickerId : option.id === resultsFilterId;
+      const shape = makeSvg('path');
+      shape.setAttribute('d','M' + (config.x + 5) + ' ' + rowY + 'H' + (config.x + config.width - 10) + 'V' + (rowY + config.rowHeight - 2) + 'H' + (config.x + 5) + 'Z');
+      shape.setAttribute('class','track-dropdown-option-shape' + (selected ? ' is-current' : '')); item.append(shape);
+      const label = textNode(config.x + 16,rowY + config.rowHeight * .69,option.label,'track-dropdown-option-label');
+      label.setAttribute('textLength',config.width - 46); label.setAttribute('lengthAdjust','spacingAndGlyphs'); item.append(label);
+      bindListAction(item,option.action); content.append(item);
+    });
+    const state = dropdownStates[kind];
+    const visible = config.height - 12;
+    const total = Math.max(visible,options.length * config.rowHeight + 8);
+    state.maxOffset = Math.max(0,total - visible); state.offset = clamp(state.offset,0,state.maxOffset);
+    content.setAttribute('transform','translate(0 ' + -state.offset + ')');
+    const trackHeight = config.height - 18, thumbHeight = state.maxOffset ? Math.max(25,trackHeight * visible / total) : trackHeight;
+    const thumb = makeSvg('path'); thumb.setAttribute('d','M' + (config.x + config.width - 5) + ' ' + (config.y + 8) + 'V' + (config.y + 8 + thumbHeight));
+    thumb.setAttribute('class','track-dropdown-scroll'); group.append(thumb);
+    state.content = content; state.thumb = thumb; state.config = config;
+  }
+  function openTrackDropdown(kind) {
+    const config = dropdownConfig[kind];
+    renderTrackDropdown(kind);
+    $(config.group).style.display = 'inline'; $(config.group).setAttribute('aria-hidden','false');
+    $(kind === 'lap' ? 'lapTrackSelect' : 'resultsFilter').setAttribute('aria-expanded','true');
+  }
+  function setDropdownOffset(kind,value) {
+    const state = dropdownStates[kind], config = dropdownConfig[kind];
+    state.offset = clamp(value,0,state.maxOffset);
+    if (state.content) state.content.setAttribute('transform','translate(0 ' + -state.offset + ')');
+    if (state.thumb) {
+      const visible = config.height - 12, total = visible + state.maxOffset;
+      const trackHeight = config.height - 18, thumbHeight = state.maxOffset ? Math.max(25,trackHeight * visible / total) : trackHeight;
+      const y = config.y + 8 + (state.maxOffset ? state.offset / state.maxOffset * (trackHeight - thumbHeight) : 0);
+      state.thumb.setAttribute('d','M' + (config.x + config.width - 5) + ' ' + y + 'V' + (y + thumbHeight));
+    }
+  }
+  function setupDropdownInteractions() {
+    Object.keys(dropdownConfig).forEach(kind => {
+      const group = $(dropdownConfig[kind].group), state = dropdownStates[kind];
+      state.drag = {startY:0,startOffset:0,moved:false,active:false,suppressClick:false};
+      group.addEventListener('wheel',event => { event.preventDefault(); setDropdownOffset(kind,state.offset + event.deltaY); },{passive:false});
+      group.addEventListener('pointerdown',event => {
+        const point = svgPointFromEvent(event); state.drag.startY = point ? point.y : event.clientY;
+        state.drag.startOffset = state.offset; state.drag.moved = false; state.drag.active = true;
+        if (event.target && event.target.setPointerCapture) event.target.setPointerCapture(event.pointerId);
+      });
+      group.addEventListener('pointermove',event => {
+        if (!state.drag.active) return;
+        const point = svgPointFromEvent(event), y = point ? point.y : event.clientY;
+        const delta = state.drag.startY - y;
+        if (Math.abs(delta) < 4 && !state.drag.moved) return;
+        state.drag.moved = true; setDropdownOffset(kind,state.drag.startOffset + delta); event.preventDefault();
+      });
+      group.addEventListener('pointerup',() => {
+        state.drag.active = false;
+        if (state.drag.moved) { state.drag.suppressClick = true; setTimeout(() => { state.drag.suppressClick = false; },400); }
+      });
+      group.addEventListener('pointercancel',() => { state.drag.active = false; });
+      group.addEventListener('click',event => {
+        if (!state.drag.suppressClick) return;
+        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); state.drag.suppressClick = false;
+      },true);
+    });
+    bindButton('lapTrackSelect',() => {
+      if ($('lapTrackOptions').style.display === 'inline') closeTrackDropdown('lap'); else openTrackDropdown('lap');
+    });
+    bindButton('lapTrackLoad',() => { if (tracks.some(track => track.id === selectedLapPickerId)) selectTrack(selectedLapPickerId); });
+    bindButton('resultsFilter',() => {
+      if ($('resultsFilterOptions').style.display === 'inline') closeTrackDropdown('results'); else openTrackDropdown('results');
+    });
   }
   function persistNewTrack() {
     if (draftMarks.length < 2) return;
@@ -795,17 +960,67 @@
     });
     draftMarks = [];
     $('trackDraftFeedback').textContent = activeSource === 'gps' ? 'TRACK GUARDADO · PUEDES REGISTRAR OTRO' : 'TRACK GUARDADO · GPS DESCONECTADO';
+    selectedLapPickerId = tracks[tracks.length - 1].id;
     saveTracks(); renderTrackDraft();
   }
   function selectTrack(id) {
     const track = tracks.find(item => item.id === id);
     if (!track) return;
+    if (id === activeTrackId) { selectedLapPickerId = id; renderTrackPickers(); return; }
+    if (activeTrackId && activeTrackRun && lapRunning && lapStartedBy === 'TRACK GPS') {
+      openTrackConfirmation(getActiveTrack(),id); return;
+    }
     if (lapRunning && (lapStartedBy === 'TRACK GPS' || lapStartedBy.indexOf('AUTO') === 0)) stopLap();
     activeTrackRun = null; trackStartNearby = false; trackFinishNearby = false;
-    activeTrackId = id; writeStored('gpsDriveSelectedTrack',id);
-    renderTrackList(); updateLapStatus(); updateSettingsView();
+    activeTrackId = id; selectedLapPickerId = id; writeStored('gpsDriveSelectedTrack',id);
+    renderTrackList(); renderTrackPickers(); updateLapStatus(); updateSettingsView();
   }
+  function openTrackConfirmation(track,nextTrackId = '') {
+    pendingTrackConfirmation = {trackId:track ? track.id : activeTrackId,nextTrackId};
+    const message = $('trackConfirmMessage');
+    message.textContent = '¿Seguro que quieres terminar ' + (track ? track.name : 'este TRACK') + '?';
+    message.setAttribute('textLength','970'); message.setAttribute('lengthAdjust','spacingAndGlyphs');
+    $('trackConfirmDialog').style.display = 'inline'; $('trackConfirmDialog').setAttribute('aria-hidden','false');
+  }
+  function closeTrackConfirmation() {
+    $('trackConfirmDialog').style.display = 'none'; $('trackConfirmDialog').setAttribute('aria-hidden','true');
+    pendingTrackConfirmation = null;
+  }
+  function finishTrackConfirmation(saveIncomplete) {
+    if (!pendingTrackConfirmation) return;
+    const track = tracks.find(item => item.id === pendingTrackConfirmation.trackId);
+    const nextTrackId = pendingTrackConfirmation.nextTrackId;
+    const run = activeTrackRun && activeTrackRun.trackId === (track && track.id) ? activeTrackRun : null;
+    if (saveIncomplete && run && track) {
+      const endedAt = Math.max(lastPosition ? lastPosition.timestamp : 0,Date.now());
+      const lastSample = run.samples[run.samples.length - 1];
+      const durationMs = Math.max(0,endedAt - run.startedAt);
+      const movingTime = Math.max(0,movingTimeMs - run.startMovingTimeMs);
+      const movingDistance = Math.max(0,movingDistanceKm - run.startMovingDistanceKm);
+      track.results = [...(track.results || []),{
+        id:'result-incomplete-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
+        completed:false,startedAt:run.startedAt,endedAt,lapTimeMs:durationMs,
+        routeDistanceKm:lastSample ? lastSample.distanceKm : Math.max(0,distanceKm - run.startDistanceKm),
+        maxSpeed:run.maxSpeed,averageSpeed:movingTime ? movingDistance / (movingTime / 3600000) : 0,
+        telemetry:run.samples,checkpointSplits:run.checkpointSplits
+      }];
+    }
+    if (lapRunning) stopLap();
+    activeTrackRun = null; trackStartNearby = false; trackFinishNearby = false;
+    activeTrackId = ''; writeStored('gpsDriveSelectedTrack','');
+    closeTrackConfirmation();
+    if (track && saveIncomplete && run) saveTracks();
+    else { renderTrackList(); renderTrackResults(); renderTrackPickers(); updateLapStatus(); updateSettingsView(); }
+    if (nextTrackId && nextTrackId !== track?.id) selectTrack(nextTrackId);
+  }
+  bindButton('trackConfirmContinue',closeTrackConfirmation);
+  bindButton('trackConfirmFinish',() => finishTrackConfirmation(false));
+  bindButton('trackConfirmSave',() => finishTrackConfirmation(true));
+  $('trackConfirmDialog').addEventListener('keydown',event => {
+    if (event.key === 'Escape') { event.preventDefault(); closeTrackConfirmation(); }
+  });
   bindButton('addTrackMark',captureTrackMark);
+  bindButton('removeTrackMark',removeLastTrackMark);
   bindButton('createTrack',persistNewTrack);
 
   function distanceFromTrackMarkKm(mark,position) { return calculateDistance(mark,position); }
@@ -869,7 +1084,7 @@
     const result = {
       id:'result-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
       startedAt:run.startedAt,endedAt:timestamp,lapTimeMs,routeDistanceKm:getTrackDistanceKm(track),
-      maxSpeed:run.maxSpeed,averageSpeed:movementTime ? movementDistance / (movementTime / 3600000) : 0,
+      completed:true,maxSpeed:run.maxSpeed,averageSpeed:movementTime ? movementDistance / (movementTime / 3600000) : 0,
       telemetry:run.samples,checkpointSplits:run.checkpointSplits
     };
     track.results = [...(track.results || []),result];
@@ -1074,16 +1289,20 @@
         createdAt:Number(track.createdAt) || Date.now(),
         marks:track.marks.filter(mark => Number.isFinite(Number(mark.latitude)) && Number.isFinite(Number(mark.longitude)))
           .map(mark => ({type:String(mark.type || 'CHECKPOINT'),latitude:Number(mark.latitude),longitude:Number(mark.longitude),
+            isCheckpoint:mark.isCheckpoint === true || !['START','FINISH'].includes(String(mark.type).toUpperCase()),
             altitude:mark.altitude == null || !Number.isFinite(Number(mark.altitude)) ? null : Number(mark.altitude),
             accuracy:mark.accuracy == null || !Number.isFinite(Number(mark.accuracy)) ? null : Number(mark.accuracy),
             timestamp:Number(mark.timestamp) || Date.now(),gpsTimestamp:Number(mark.gpsTimestamp) || null})),
-        results:Array.isArray(track.results) ? track.results : []
+        results:Array.isArray(track.results) ? track.results.map(result => ({...result,completed:result.completed !== false,
+          checkpointSplits:Array.isArray(result.checkpointSplits) ? result.checkpointSplits : []})) : []
       })).filter(track => track.marks.length >= 2);
   }
   try { tracks = normalizeTracks(JSON.parse(readStored('gpsDriveTracks','[]'))); }
   catch (_) { tracks = []; }
   nextTrackNumber = Math.max(nextTrackNumber,...tracks.map(track => track.number + 1),1);
   if (!tracks.some(track => track.id === activeTrackId)) activeTrackId = '';
+  selectedLapPickerId = activeTrackId;
+  if (resultsFilterId !== 'best' && !tracks.some(track => track.id === resultsFilterId)) resultsFilterId = 'best';
   try {
     const storedHistory = JSON.parse(readStored('gpsDriveSessions','[]'));
     sessionHistory = Array.isArray(storedHistory) ? storedHistory : [];
@@ -1096,8 +1315,9 @@
 
   buildGauge();
   setupTrackScrollers();
+  setupDropdownInteractions();
   updateSettingsView();
-  renderLaps(); renderTrackDraft(); renderTrackList(); renderTrackResults(); renderHistory();
+  renderLaps(); renderTrackDraft(); renderTrackList(); renderTrackResults(); renderTrackPickers(); renderHistory();
   updateSourceIndicator(null);
   updateSpeedDisplay(0,null,null);
   updateLapStatus();

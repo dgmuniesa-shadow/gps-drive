@@ -40,7 +40,9 @@
         <clipPath id="testPanelClip"><path d="M41 659 64 636H1512L1558 682V745L1536 768H64L41 745Z"/></clipPath>
         <clipPath id="trackDraftClip"><rect x="82" y="399" width="430" height="281"/></clipPath>
         <clipPath id="trackListClip"><rect x="584" y="371" width="438" height="336"/></clipPath>
-        <clipPath id="trackResultsClip"><rect x="1086" y="374" width="432" height="333"/></clipPath>
+        <clipPath id="trackResultsClip"><rect x="1086" y="410" width="432" height="297"/></clipPath>
+        <clipPath id="lapTrackOptionsClip"><rect x="100" y="364" width="490" height="340"/></clipPath>
+        <clipPath id="resultsFilterOptionsClip"><rect x="1085" y="376" width="432" height="331"/></clipPath>
       </defs>
 
       <!-- Dark navy carbon-fiber field and the large slanted motorsport insignia -->
@@ -187,6 +189,17 @@
         <text id="lapClock" x="797" y="419" text-anchor="middle" class="lap-clock">00:00.00</text>
         <text x="797" y="454" text-anchor="middle" class="page-label">CURRENT LAP / GPS TIMING</text>
         <text id="lapAutoStatus" x="797" y="475" text-anchor="middle" class="page-small">AUTO START ≥ 5 KM/H · FINISH CHECKPOINT NOT SET</text>
+        <g id="lapTrackPicker" class="track-picker">
+          <g id="lapTrackSelect" class="interactive track-select-button" role="button" tabindex="0" aria-expanded="false" aria-label="Seleccionar track para Lap Time">
+            <path d="M107 309H436L449 322V360H107Z" class="track-select-shape"/>
+            <text id="lapTrackSelectLabel" x="124" y="341" class="track-select-label">SELECCIONAR TRACK</text>
+            <path d="M414 326 426 338 438 326" class="track-select-arrow"/>
+          </g>
+          <g id="lapTrackLoad" class="interactive track-load-button" role="button" tabindex="0" aria-label="Cargar track seleccionado" aria-disabled="true">
+            <path d="M462 309H570L582 322V360H462Z" class="track-load-shape"/>
+            <text x="522" y="341" text-anchor="middle" class="track-use-label">CARGAR</text>
+          </g>
+        </g>
         <g id="lapStart" class="interactive svg-button" role="button" tabindex="0" aria-label="Iniciar cronómetro">
           <path d="M106 529 136 488H430L410 529H88Z" fill="url(#blueButton)" stroke="#08baff" stroke-width="2"/>
           <text x="258" y="515" text-anchor="middle" class="button-text">INICIAR</text>
@@ -207,6 +220,7 @@
         <text x="100" y="584" class="page-label">VUELTAS REGISTRADAS</text>
         <text x="1490" y="584" text-anchor="end" class="page-small">GPS / TIME / SPEED</text>
         <g id="lapList"></g>
+        <g id="lapTrackOptions" class="track-options" style="display:none" aria-hidden="true"></g>
       </g>
 
       <g id="view-gps" class="svg-view secondary-view" style="display:none">
@@ -219,8 +233,12 @@
           <path d="M91 347H145L139 386H85Z" fill="url(#blueButton)" stroke="#08baff" stroke-width="2"/>
           <text x="115" y="378" text-anchor="middle" class="button-text">＋</text>
         </g>
-        <text x="158" y="359" class="page-small">MARCA GPS REAL</text>
-        <text id="trackDraftFeedback" x="158" y="381" class="page-small">INICIA GPS PARA REGISTRAR START</text>
+        <g id="removeTrackMark" class="interactive svg-button track-remove-button" role="button" tabindex="0" aria-label="Borrar última marca" aria-disabled="true">
+          <path d="M151 347H196L191 386H146Z" fill="url(#darkButton)" stroke="#a6445d" stroke-width="2"/>
+          <text x="171" y="378" text-anchor="middle" class="button-text button-dim">−</text>
+        </g>
+        <text x="209" y="359" class="page-small">MARCA GPS REAL</text>
+        <text id="trackDraftFeedback" x="209" y="381" class="page-small">INICIA GPS PARA REGISTRAR START</text>
         <g id="trackDraftViewport" clip-path="url(#trackDraftClip)" class="scroll-viewport"><g id="trackDraftContent"></g></g>
         <path id="trackDraftScrollTrack" d="M519 401V678" class="scrollbar-track"/>
         <path id="trackDraftScrollThumb" d="M519 401V678" class="scrollbar-thumb interactive" role="slider" tabindex="0" aria-label="Desplazar marcas del nuevo track" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"/>
@@ -239,13 +257,30 @@
 
         <path d="M1062 308 1080 290H1540V724L1520 744H1082L1062 724Z" fill="url(#tileRed)" stroke="#ff324e" stroke-width="2"/>
         <text x="1096" y="326" class="page-label">LISTA DE RESULTADOS</text>
-        <text x="1092" y="359" class="data-row-small">NOMBRE</text>
-        <text x="1360" y="359" text-anchor="middle" class="data-row-small">RECORRIDO (KM)</text>
-        <text x="1500" y="359" text-anchor="end" class="data-row-small">TIEMPO</text>
-        <path d="M1088 368H1516" class="page-separator"/>
+        <g id="resultsFilter" class="interactive track-select-button" role="button" tabindex="0" aria-expanded="false" aria-label="Filtrar resultados">
+          <path d="M1088 338H1515L1522 345V372H1088Z" class="track-select-shape"/>
+          <text id="resultsFilterLabel" x="1102" y="361" class="track-select-label">MEJOR VUELTA</text>
+          <path d="M1489 347 1501 359 1513 347" class="track-select-arrow"/>
+        </g>
+        <text x="1092" y="397" class="data-row-small">NOMBRE</text>
+        <text x="1360" y="397" text-anchor="middle" class="data-row-small">RECORRIDO (KM)</text>
+        <text x="1500" y="397" text-anchor="end" class="data-row-small">TIEMPO</text>
+        <path d="M1088 404H1516" class="page-separator"/>
         <g id="trackResultsViewport" clip-path="url(#trackResultsClip)" class="scroll-viewport"><g id="trackResultsContent"></g></g>
-        <path id="trackResultsScrollTrack" d="M1524 375V707" class="scrollbar-track"/>
-        <path id="trackResultsScrollThumb" d="M1524 375V707" class="scrollbar-thumb interactive" role="slider" tabindex="0" aria-label="Desplazar resultados de tracks" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"/>
+        <path id="trackResultsScrollTrack" d="M1524 411V707" class="scrollbar-track"/>
+        <path id="trackResultsScrollThumb" d="M1524 411V707" class="scrollbar-thumb interactive" role="slider" tabindex="0" aria-label="Desplazar resultados de tracks" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"/>
+        <g id="resultsFilterOptions" class="track-options" style="display:none" aria-hidden="true"></g>
+      </g>
+
+      <g id="trackConfirmDialog" class="config-keyboard" style="display:none" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="trackConfirmMessage">
+        <rect class="keyboard-backdrop" x="0" y="0" width="1600" height="800"/>
+        <path d="M260 294 288 266H1312L1340 294V510L1312 538H288L260 510Z" class="keyboard-panel"/>
+        <path d="M296 344H1304" class="keyboard-divider"/>
+        <text id="trackConfirmMessage" x="800" y="315" text-anchor="middle" class="track-confirm-message"></text>
+        <text id="trackConfirmWarning" x="800" y="357" text-anchor="middle" class="track-confirm-warning">¡Perderas el progreso sin guardar!</text>
+        <g id="trackConfirmContinue" class="interactive track-confirm-button" role="button" tabindex="0"><path d="M320 418H604L590 476H306Z" class="track-confirm-shape"/><text x="455" y="455" text-anchor="middle" class="track-confirm-label">CONTINUAR</text></g>
+        <g id="trackConfirmFinish" class="interactive track-confirm-button is-danger" role="button" tabindex="0"><path d="M658 418H942L928 476H644Z" class="track-confirm-shape"/><text x="793" y="455" text-anchor="middle" class="track-confirm-label">TERMINAR</text></g>
+        <g id="trackConfirmSave" class="interactive track-confirm-button is-save" role="button" tabindex="0"><path d="M996 418H1280L1266 476H982Z" class="track-confirm-shape"/><text x="1131" y="455" text-anchor="middle" class="track-confirm-label">GUARDAR</text></g>
       </g>
 
       <g id="view-settings" class="svg-view secondary-view" style="display:none">
