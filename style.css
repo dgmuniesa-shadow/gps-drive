@@ -16,7 +16,7 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .gauge-label{fill:#f4f7ff;font-size:28px;font-weight:1000;stroke:#f4f7ff;stroke-width:.5px}
 .speed-value{fill:#f6f8fc;font-size:92px;font-weight:1000;letter-spacing:-3px;stroke:#fff;stroke-width:1px;filter:drop-shadow(0 2px 5px #d5e9ff55)}
 .speed-unit{fill:#08aaff;font-size:37px;font-weight:1000;letter-spacing:4px;stroke:#08aaff;stroke-width:.6px}
-.meta-label{fill:#9cb9d3;font-size:25px;font-weight:950;letter-spacing:1.2px;stroke:#9cb9d3;stroke-width:.45px}
+.meta-label{fill:#bd7784;font-size:20px;font-weight:800;letter-spacing:.8px;stroke:#bd7784;stroke-width:.3px}
 .limit-title{fill:#9dc6e2;font-size:30px;font-weight:1000;letter-spacing:.35px;stroke:#9dc6e2;stroke-width:.4px}
 .limit-number{fill:#f7f8fb;font-size:96px;font-weight:1000;letter-spacing:-5px;stroke:#f7f8fb;stroke-width:1px}
 .limit-unit{fill:#59bdea;font-size:30px;font-weight:1000;letter-spacing:.3px;stroke:#59bdea;stroke-width:.45px}

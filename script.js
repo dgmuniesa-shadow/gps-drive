@@ -42,7 +42,7 @@
   };
 
   // The SVG keeps the original angled two-segment scale. Thickness depends only on position.
-  const gaugePoints = [{x:132,y:400},{x:440,y:300},{x:1067,y:300}];
+  const gaugePoints = [{x:160,y:400},{x:440,y:300},{x:1040,y:300}];
   const gaugeSamples = [];
   let gaugeLength = 0;
   let speed = 0;
@@ -82,7 +82,7 @@
   let pointerSliding = false;
 
   function thicknessAt(distanceAlong) {
-    return 7 + 9 * Math.sin(Math.PI * distanceAlong / gaugeLength * .72);
+    return 22 + 9 * Math.sin(Math.PI * distanceAlong / gaugeLength * .72);
   }
 
   function gaugeRibbon(distanceToDraw) {
