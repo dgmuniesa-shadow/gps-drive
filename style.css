@@ -17,10 +17,9 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .speed-value{fill:#f6f8fc;font-size:92px;font-weight:1000;letter-spacing:-3px;stroke:#fff;stroke-width:1px;filter:drop-shadow(0 2px 5px #d5e9ff55)}
 .speed-unit{fill:#08aaff;font-size:37px;font-weight:1000;letter-spacing:4px;stroke:#08aaff;stroke-width:.6px}
 .meta-label{fill:#bd7784;font-size:20px;font-weight:800;letter-spacing:.8px;stroke:#bd7784;stroke-width:.3px}
-.limit-title{fill:#9dc6e2;font-size:30px;font-weight:1000;letter-spacing:.35px;stroke:#9dc6e2;stroke-width:.4px}
-.limit-number{fill:#f7f8fb;font-size:96px;font-weight:1000;letter-spacing:-5px;stroke:#f7f8fb;stroke-width:1px}
 .limit-unit{fill:#59bdea;font-size:30px;font-weight:1000;letter-spacing:.3px;stroke:#59bdea;stroke-width:.45px}
-.limit-warning{fill:#ff203b;font-size:31px;font-weight:1000;letter-spacing:.15px;stroke:#ff203b;stroke-width:.5px;filter:drop-shadow(0 0 6px #f0224250)}
+.limit-meta.is-exceeded{fill:#ed5666;stroke:#ed5666;filter:drop-shadow(0 0 4px #ed566640)}
+.limit-meta.is-inactive{fill:#866b79;stroke:#866b79}
 .stat-title{fill:#9cbfdd;font-size:22px;font-weight:1000;letter-spacing:.5px;stroke:#9cbfdd;stroke-width:.4px}
 .stat-number{fill:#f5f7fc;font-size:46px;font-weight:1000;letter-spacing:-1.8px;stroke:#f5f7fc;stroke-width:.7px}
 .stat-time{font-size:42px;letter-spacing:-1.5px}
@@ -42,11 +41,6 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .gps-status.is-error .status-lamp{fill:#ff2947}
 .live-text.is-simulated{fill:#e04bff;stroke:#e04bff}
 .live-text.is-inactive{fill:#8aa9c5;stroke:#8aa9c5}
-.limit-warning.is-ok{fill:#00ee91;stroke:#00ee91;filter:none}
-.limit-warning.is-exceeded{fill:#ff203b;stroke:#ff203b}
-.limit-meter .meter-segment{opacity:.17;transition:opacity .12s,filter .12s}
-.limit-meter .meter-segment.is-lit{opacity:1;filter:drop-shadow(0 0 5px #087aff)}
-.limit-meter.is-exceeded .meter-segment.is-lit{filter:drop-shadow(0 0 6px #ff2947)}
 .test-status.is-enabled{fill:#00ef92;stroke:#00ef92}
 .secondary-view .page-title{fill:#98c7e8;font-size:36px;font-weight:1000;letter-spacing:1.4px;stroke:#98c7e8;stroke-width:.45px}
 .page-label{fill:#9dbfda;font-size:25px;font-weight:950;letter-spacing:.7px;stroke:#9dbfda;stroke-width:.4px}

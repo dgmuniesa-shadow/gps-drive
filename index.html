@@ -107,25 +107,16 @@
         <g id="gaugeLabels" class="gauge-labels"></g>
         <text id="speedNumber" x="601" y="415" text-anchor="middle" class="speed-value">0</text>
         <text x="601" y="442" text-anchor="middle" class="speed-unit">KM/H</text>
-        <text x="760" y="415" text-anchor="start" class="meta-label">MAX <tspan id="maxInline">0</tspan> KM/H</text>
+        <text x="760" y="395" text-anchor="start" class="meta-label">MAX <tspan id="maxInline">0</tspan> KM/H</text>
         <path d="M83 428H500" stroke="#173b58" stroke-width="1.3"/>
-        <text x="760" y="442" text-anchor="start" class="meta-label">PRECISIÓN <tspan id="accuracy">--</tspan></text>
+        <text x="760" y="419" text-anchor="start" class="meta-label">PRECISIÓN <tspan id="accuracy">--</tspan></text>
+        <text id="mainLimitReading" x="760" y="443" text-anchor="start" class="meta-label limit-meta is-inactive">-</text>
       </g>
 
       <!-- Red edged speed limit housing -->
       <path d="M1140 274 1168 246H1550L1574 270V402L1546 430H1166L1140 404Z" fill="#031125" fill-opacity=".97" stroke="#ff3450" stroke-width="3" filter="url(#deepShadow)"/>
       <g clip-path="url(#limitPanelClip)">
         <rect x="1140" y="246" width="435" height="184" fill="url(#carbon)" opacity=".12"/>
-        <text x="1180" y="284" class="limit-title">LÍMITE DE VELOCIDAD</text>
-        <text id="limitValue" x="1194" y="361" class="limit-number">120</text>
-        <text x="1408" y="350" class="limit-unit">KM/H</text>
-        <text id="limitStatus" x="1180" y="404" class="limit-warning is-ok">LÍMITE OK</text>
-        <g id="limitMeter" class="limit-meter" transform="skewX(-15)" role="meter" aria-label="Velocidad actual">
-          <rect class="meter-segment" x="1195" y="415" width="37" height="10" fill="#04afff"/><rect class="meter-segment" x="1237" y="415" width="37" height="10" fill="#087aff"/>
-          <rect class="meter-segment" x="1279" y="415" width="37" height="10" fill="#3445ff"/><rect class="meter-segment" x="1321" y="415" width="37" height="10" fill="#8125ff"/>
-          <rect class="meter-segment" x="1363" y="415" width="37" height="10" fill="#c820e8"/><rect class="meter-segment" x="1405" y="415" width="37" height="10" fill="#f0229b"/>
-          <rect class="meter-segment" x="1447" y="415" width="37" height="10" fill="#fa205d"/><rect class="meter-segment" x="1489" y="415" width="37" height="10" fill="#ff2444"/>
-        </g>
       </g>
 
       <!-- Performance statistics -->
@@ -244,7 +235,7 @@
         <text x="99" y="260" class="panel-title">AJUSTES DE CONDUCCIÓN</text>
         <path d="M82 303 106 280H782L804 302V721L782 744H106L82 721Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
         <text x="122" y="331" class="page-label">LÍMITE DE VELOCIDAD</text>
-        <text id="limitReadout" x="120" y="410" class="setting-value">120</text><text x="270" y="408" class="limit-unit">KM/H</text>
+        <text id="limitReadout" x="120" y="410" class="setting-value">-</text><text x="270" y="408" class="limit-unit">KM/H</text>
         <g id="limitMinus" class="interactive svg-button" role="button" tabindex="0" aria-label="Bajar límite">
           <path d="M438 356H554L540 395H424Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/>
           <text x="489" y="384" text-anchor="middle" class="button-text button-dim">−</text>

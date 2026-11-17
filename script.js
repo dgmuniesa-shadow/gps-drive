@@ -58,7 +58,13 @@
   let gpsActive = false;
   let simulation = false;
   let activeSource = null;
-  let limit = clamp(Number(readStored('gpsDriveLimit','120')) || 120,1,300);
+  const storedLimitRaw = readStored('gpsDriveLimit',null);
+  const storedLimit = Number(storedLimitRaw);
+  const savedLimitEnabled = readStored('gpsDriveLimitEnabled',null);
+  const migratedCustomLimit = savedLimitEnabled === null && storedLimitRaw !== null &&
+    Number.isFinite(storedLimit) && storedLimit > 0 && storedLimit !== 120;
+  let limit = (savedLimitEnabled === 'true' || migratedCustomLimit) && Number.isFinite(storedLimit)
+    ? clamp(storedLimit,0,300) : 0;
   let autoStartEnabled = readStored('gpsDriveAutoStart','true') !== 'false';
   let autoStartThreshold = clamp(Number(readStored('gpsDriveAutoStartThreshold','5')) || 5,1,30);
   let autoCheckpointsEnabled = readStored('gpsDriveAutoCheckpoints','true') !== 'false';
@@ -168,18 +174,12 @@
   }
 
   function updateLimitIndicator() {
-    const exceeded = speed > limit;
-    const warning = $('limitStatus');
-    warning.textContent = exceeded ? 'LÍMITE SUPERADO' : 'LÍMITE OK';
-    warning.classList.toggle('is-ok',!exceeded);
-    warning.classList.toggle('is-exceeded',exceeded);
-    const meter = $('limitMeter');
-    meter.setAttribute('aria-valuenow',String(Math.round(speed)));
-    meter.setAttribute('aria-valuemax','300');
-    meter.classList.toggle('is-exceeded',exceeded);
-    meter.querySelectorAll('.meter-segment').forEach((segment,index) => {
-      segment.classList.toggle('is-lit',speed / 300 * 8 > index);
-    });
+    const configured = limit > 0;
+    const reading = $('mainLimitReading');
+    const exceeded = configured && speed > limit;
+    reading.textContent = configured ? 'LIM. ' + limit : '-';
+    reading.classList.toggle('is-exceeded',exceeded);
+    reading.classList.toggle('is-inactive',!configured);
   }
 
   function updateSpeedDisplay(value,accuracy = null,source = activeSource) {
@@ -644,8 +644,7 @@
   }
 
   function updateSettingsView() {
-    $('limitValue').textContent = String(limit);
-    $('limitReadout').textContent = String(limit);
+    $('limitReadout').textContent = limit ? String(limit) : '-';
     $('autoStartValue').textContent = autoStartEnabled ? 'ACTIVADO' : 'DESACTIVADO';
     $('autoStartThreshold').textContent = autoStartThreshold + ' KM/H';
     $('autoCheckpointValue').textContent = autoCheckpointsEnabled ? 'ACTIVADOS' : 'DESACTIVADOS';
@@ -665,14 +664,15 @@
   }
   function saveSettings() {
     writeStored('gpsDriveLimit',String(limit));
+    writeStored('gpsDriveLimitEnabled',String(limit > 0));
     writeStored('gpsDriveAutoStart',String(autoStartEnabled));
     writeStored('gpsDriveAutoStartThreshold',String(autoStartThreshold));
     writeStored('gpsDriveAutoCheckpoints',String(autoCheckpointsEnabled));
     writeStored('gpsDriveCheckpointRadius',String(checkpointRadius));
     updateSettingsView(); updateLimitIndicator();
   }
-  bindButton('limitMinus',() => { limit = clamp(limit - 5,1,300); saveSettings(); });
-  bindButton('limitPlus',() => { limit = clamp(limit + 5,1,300); saveSettings(); });
+  bindButton('limitMinus',() => { limit = clamp(limit - 5,0,300); saveSettings(); });
+  bindButton('limitPlus',() => { limit = limit ? clamp(limit + 5,0,300) : 5; saveSettings(); });
   bindButton('autoStartToggle',() => { autoStartEnabled = !autoStartEnabled; saveSettings(); updateLapStatus(); });
   bindButton('thresholdMinus',() => { autoStartThreshold = clamp(autoStartThreshold - 1,1,30); saveSettings(); updateLapStatus(); });
   bindButton('thresholdPlus',() => { autoStartThreshold = clamp(autoStartThreshold + 1,1,30); saveSettings(); updateLapStatus(); });
