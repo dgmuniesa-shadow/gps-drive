@@ -237,7 +237,7 @@
         <text x="99" y="260" class="panel-title">AJUSTES DE CONDUCCIÓN</text>
         <path d="M82 303 106 280H782L804 302V721L782 744H106L82 721Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
         <text x="122" y="331" class="page-label">LÍMITE DE VELOCIDAD</text>
-        <text id="limitReadout" x="120" y="410" class="setting-value">-</text><text x="270" y="408" class="limit-unit">KM/H</text>
+        <text id="limitReadout" x="120" y="410" class="setting-value">120</text><text x="270" y="408" class="limit-unit">KM/H</text>
         <g id="limitMinus" class="interactive svg-button" role="button" tabindex="0" aria-label="Bajar límite">
           <path d="M438 356H554L540 395H424Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/>
           <text x="489" y="384" text-anchor="middle" class="button-text button-dim">−</text>
@@ -245,6 +245,10 @@
         <g id="limitPlus" class="interactive svg-button" role="button" tabindex="0" aria-label="Subir límite">
           <path d="M570 356H686L672 395H556Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/>
           <text x="621" y="384" text-anchor="middle" class="button-text button-dim">＋</text>
+        </g>
+        <g id="limitToggle" class="interactive svg-button limit-toggle" role="button" tabindex="0" aria-label="Activar límite de velocidad" aria-pressed="false">
+          <path d="M698 356H790L777 395H685Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/>
+          <text id="limitToggleLabel" x="737" y="381" text-anchor="middle" class="limit-toggle-text">LIM OFF</text>
         </g>
         <path d="M122 443H752" stroke="#173c56" stroke-width="1.3"/>
         <text x="122" y="480" class="page-label">INICIO AUTOMÁTICO DE VUELTA</text>

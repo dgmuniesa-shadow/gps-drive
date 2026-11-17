@@ -20,6 +20,10 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .limit-unit{fill:#59bdea;font-size:30px;font-weight:1000;letter-spacing:.3px;stroke:#59bdea;stroke-width:.45px}
 .limit-meta.is-exceeded{fill:#ed5666;stroke:#ed5666;filter:drop-shadow(0 0 4px #ed566640)}
 .limit-meta.is-inactive{fill:#866b79;stroke:#866b79}
+.limit-toggle path{transition:fill .15s,stroke .15s}
+.limit-toggle.is-on path{fill:url(#blueButton);stroke:#08baff}
+.limit-toggle-text{fill:#91abc5;font-size:14px;font-weight:950;letter-spacing:.4px;stroke:#91abc5;stroke-width:.25px}
+.limit-toggle.is-on .limit-toggle-text{fill:#f5f8ff;stroke:#f5f8ff}
 .stat-title{fill:#9cbfdd;font-size:22px;font-weight:1000;letter-spacing:.5px;stroke:#9cbfdd;stroke-width:.4px}
 .stat-number{fill:#f5f7fc;font-size:46px;font-weight:1000;letter-spacing:-1.8px;stroke:#f5f7fc;stroke-width:.7px}
 .stat-time{font-size:42px;letter-spacing:-1.5px}
