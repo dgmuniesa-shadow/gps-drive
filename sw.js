@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'gps-drive-shell-v1';
+const CACHE_NAME = 'gps-drive-shell-v2';
 const APP_FILES = ['./index.html', './style.css', './script.js'];
 
 self.addEventListener('install', event => {

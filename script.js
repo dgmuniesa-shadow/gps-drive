@@ -711,6 +711,6 @@
   setDisabled('stopGPS',true); setDisabled('lapStop',true);
   showPage('drive');
   if ('serviceWorker' in navigator && typeof location !== 'undefined' && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).catch(() => {});
   }
 })();
