@@ -60,6 +60,18 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .data-row-small{fill:#718fa9;font-size:16px;font-weight:850;letter-spacing:.15px;stroke:#718fa9;stroke-width:.25px}
 .data-action-label{fill:#9dc8e5;font-size:16px;font-weight:950;letter-spacing:.3px;stroke:#9dc8e5;stroke-width:.35px}
 .page-separator{stroke:#173c56;stroke-width:1.2}
+.scroll-viewport{pointer-events:all;touch-action:none;cursor:grab}
+.scroll-viewport:active{cursor:grabbing}
+.scrollbar-track{fill:none;stroke:#174361;stroke-width:4;stroke-linecap:round;opacity:.72;pointer-events:none}
+.scrollbar-thumb{fill:none;stroke:#078fe0;stroke-width:10;stroke-linecap:round;opacity:.78;pointer-events:stroke;touch-action:none;cursor:ns-resize}
+.scrollbar-thumb:hover,.scrollbar-thumb:focus-visible{stroke:#24c9ff;opacity:1;filter:drop-shadow(0 0 5px #08aaff)}
+.track-row-highlight{fill:#078aff;fill-opacity:.1;stroke:#08baff;stroke-opacity:.55;stroke-width:1.5}
+.track-name{fill:#d2e7f5;font-size:20px;font-weight:950;letter-spacing:.4px;stroke:#d2e7f5;stroke-width:.25px;cursor:pointer}
+.track-name:hover,.track-name:focus-visible{fill:#55ceff;stroke:#55ceff}
+.track-use-button{cursor:pointer}
+.track-use-shape{fill:#041b32;fill-opacity:.92;stroke:#1684c7;stroke-width:1.5}
+.track-use-button:hover .track-use-shape,.track-use-button:focus-visible .track-use-shape{fill:#07528b;stroke:#2acaff;filter:drop-shadow(0 0 4px #08aaff)}
+.track-use-label{fill:#9dc8e5;font-size:13px;font-weight:950;letter-spacing:.25px;pointer-events:none}
 .dynamic-row{cursor:pointer}
 .dynamic-row:focus-visible{filter:drop-shadow(0 0 5px #18baff)}
 .config-keyboard .keyboard-backdrop{fill:#01050b;fill-opacity:.42}

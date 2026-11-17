@@ -38,6 +38,9 @@
         <clipPath id="tileThreeClip"><path d="M792 491 809 474H1119L1136 491V543L1119 560H809L792 543Z"/></clipPath>
         <clipPath id="tileFourClip"><path d="M1157 491 1174 474H1515L1532 492V543L1515 560H1174L1157 543Z"/></clipPath>
         <clipPath id="testPanelClip"><path d="M41 659 64 636H1512L1558 682V745L1536 768H64L41 745Z"/></clipPath>
+        <clipPath id="trackDraftClip"><rect x="82" y="399" width="430" height="281"/></clipPath>
+        <clipPath id="trackListClip"><rect x="584" y="371" width="438" height="336"/></clipPath>
+        <clipPath id="trackResultsClip"><rect x="1086" y="374" width="432" height="333"/></clipPath>
       </defs>
 
       <!-- Dark navy carbon-fiber field and the large slanted motorsport insignia -->
@@ -209,26 +212,40 @@
       <g id="view-gps" class="svg-view secondary-view" style="display:none">
         <path d="M40 256 82 215H1558V740L1531 768H64L40 744Z" fill="#020d1c" fill-opacity=".96" stroke="url(#frameEdge)" stroke-width="3" filter="url(#deepShadow)"/>
         <path d="M82 272H1558" stroke="#124b74" stroke-width="1.4"/>
-        <text x="99" y="260" class="panel-title">DATOS GPS / CHECKPOINTS</text>
-        <g>
-          <path d="M82 298 104 278H822L844 300V445L824 465H104L82 443Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
-          <text x="120" y="325" class="page-label">LATITUD</text><text x="120" y="365" class="page-value" id="latitude">--</text>
-          <text x="470" y="325" class="page-label">LONGITUD</text><text x="470" y="365" class="page-value" id="longitude">--</text>
-          <text x="120" y="405" class="page-label">ALTITUD</text><text x="120" y="438" class="page-value page-value-small" id="altitude">--</text>
-          <text x="470" y="405" class="page-label">PRECISIÓN GPS</text><text x="470" y="438" class="page-value page-value-small" id="gpsAccuracy">--</text>
+        <text x="99" y="260" class="panel-title">GESTIÓN DE TRACKS GPS</text>
+        <path d="M58 308 76 290H536V724L516 744H78L58 724Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
+        <text x="92" y="326" class="page-label">NUEVO TRACK</text>
+        <g id="addTrackMark" class="interactive svg-button track-add-button" role="button" tabindex="0" aria-label="Registrar marca GPS">
+          <path d="M91 347H145L139 386H85Z" fill="url(#blueButton)" stroke="#08baff" stroke-width="2"/>
+          <text x="115" y="378" text-anchor="middle" class="button-text">＋</text>
         </g>
-        <g id="saveCheckpoint" class="interactive svg-button" role="button" tabindex="0" aria-label="Guardar checkpoint">
-          <path d="M99 498 127 460H523L503 498H82Z" fill="url(#blueButton)" stroke="#08baff" stroke-width="2"/>
-          <text x="300" y="484" text-anchor="middle" class="button-text">＋ CHECKPOINT</text>
+        <text x="158" y="359" class="page-small">MARCA GPS REAL</text>
+        <text id="trackDraftFeedback" x="158" y="381" class="page-small">INICIA GPS PARA REGISTRAR START</text>
+        <g id="trackDraftViewport" clip-path="url(#trackDraftClip)" class="scroll-viewport"><g id="trackDraftContent"></g></g>
+        <path id="trackDraftScrollTrack" d="M519 401V678" class="scrollbar-track"/>
+        <path id="trackDraftScrollThumb" d="M519 401V678" class="scrollbar-thumb interactive" role="slider" tabindex="0" aria-label="Desplazar marcas del nuevo track" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"/>
+        <g id="createTrack" class="interactive svg-button is-disabled" role="button" tabindex="0" aria-label="Crear track" aria-disabled="true">
+          <path d="M405 708H521L508 737H392Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/>
+          <text x="456" y="729" text-anchor="middle" class="data-action-label">CREAR</text>
         </g>
-        <text id="checkpointFeedback" x="550" y="486" class="page-small">GUARDA TU POSICIÓN GPS</text>
-        <path d="M82 525H844" stroke="#173c56" stroke-width="1.3"/>
-        <text x="100" y="553" class="page-label">PUNTOS GUARDADOS / PASOS</text>
-        <g id="checkpointList"></g>
-        <path d="M882 298 904 278H1495L1517 300V744L1493 766H904L882 744Z" fill="url(#tileBlue)" stroke="#1760ff" stroke-width="2"/>
-        <text x="920" y="326" class="page-label">HISTORIAL DE SESIONES</text>
-        <text x="920" y="353" class="page-small">RECORRIDOS GUARDADOS EN ESTE DISPOSITIVO</text>
-        <g id="sessionHistory"></g>
+        <text id="draftMarkCount" x="92" y="728" class="page-small">0 MARCAS · NECESITAS 2</text>
+
+        <path d="M560 308 578 290H1038V724L1018 744H580L560 724Z" fill="url(#tileBlue)" stroke="#1760ff" stroke-width="2"/>
+        <text x="594" y="326" class="page-label">TRACK LIST</text>
+        <text x="594" y="352" class="page-small">NOMBRE · MARCAS · RECORRIDO</text>
+        <g id="trackListViewport" clip-path="url(#trackListClip)" class="scroll-viewport"><g id="trackListContent"></g></g>
+        <path id="trackListScrollTrack" d="M1028 373V707" class="scrollbar-track"/>
+        <path id="trackListScrollThumb" d="M1028 373V707" class="scrollbar-thumb interactive" role="slider" tabindex="0" aria-label="Desplazar lista de tracks" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"/>
+
+        <path d="M1062 308 1080 290H1540V724L1520 744H1082L1062 724Z" fill="url(#tileRed)" stroke="#ff324e" stroke-width="2"/>
+        <text x="1096" y="326" class="page-label">LISTA DE RESULTADOS</text>
+        <text x="1092" y="359" class="data-row-small">NOMBRE</text>
+        <text x="1360" y="359" text-anchor="middle" class="data-row-small">RECORRIDO (KM)</text>
+        <text x="1500" y="359" text-anchor="end" class="data-row-small">TIEMPO</text>
+        <path d="M1088 368H1516" class="page-separator"/>
+        <g id="trackResultsViewport" clip-path="url(#trackResultsClip)" class="scroll-viewport"><g id="trackResultsContent"></g></g>
+        <path id="trackResultsScrollTrack" d="M1524 375V707" class="scrollbar-track"/>
+        <path id="trackResultsScrollThumb" d="M1524 375V707" class="scrollbar-thumb interactive" role="slider" tabindex="0" aria-label="Desplazar resultados de tracks" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"/>
       </g>
 
       <g id="view-settings" class="svg-view secondary-view" style="display:none">
@@ -275,9 +292,9 @@
         <g id="radiusMinus" class="interactive svg-button" role="button" tabindex="0" aria-label="Reducir radio"><path d="M1190 448H1306L1292 487H1176Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/><text x="1241" y="476" text-anchor="middle" class="button-text button-dim">−</text></g>
         <g id="radiusPlus" class="interactive svg-button" role="button" tabindex="0" aria-label="Aumentar radio"><path d="M1322 448H1438L1424 487H1308Z" fill="url(#darkButton)" stroke="#17639b" stroke-width="2"/><text x="1373" y="476" text-anchor="middle" class="button-text button-dim">＋</text></g>
         <path d="M888 523H1475" stroke="#173c56" stroke-width="1.3"/>
-        <text x="888" y="564" class="page-label">LÍNEA DE META GPS</text>
-        <text id="finishCheckpointValue" x="888" y="604" class="page-value page-value-small">NO CONFIGURADA</text>
-        <text x="888" y="640" class="page-small">MARCA UN CHECKPOINT COMO META EN LA PESTAÑA GPS</text>
+        <text x="888" y="564" class="page-label">TRACK GPS ACTIVO</text>
+        <text id="finishCheckpointValue" x="888" y="604" class="page-value page-value-small">NO TRACK SELECCIONADO</text>
+        <text x="888" y="640" class="page-small">SELECCIONA O CARGA UN TRACK EN LA PESTAÑA GPS</text>
         <text x="888" y="700" class="page-small">AJUSTES GUARDADOS LOCALMENTE</text>
       </g>
 

@@ -30,6 +30,12 @@
       ? String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0') + ':' + String(remain).padStart(2,'0')
       : String(Math.floor(seconds / 60)).padStart(2,'0') + ':' + String(remain).padStart(2,'0');
   };
+  const formatTrackClock = milliseconds => {
+    const totalSeconds = Math.floor(Math.max(0,milliseconds) / 1000);
+    return String(Math.floor(totalSeconds / 3600)).padStart(2,'0') + ':' +
+      String(Math.floor(totalSeconds % 3600 / 60)).padStart(2,'0') + ':' +
+      String(totalSeconds % 60).padStart(2,'0');
+  };
   const formatLap = milliseconds => {
     const elapsed = Math.max(0,milliseconds);
     const totalSeconds = Math.floor(elapsed / 1000);
@@ -53,7 +59,6 @@
   const movingThreshold = 0.8;
   const movementToleranceMs = 2000;
   let lastPosition = null;
-  let insideCheckpoints = new Set();
   let watchId = null;
   let gpsActive = false;
   let simulation = false;
@@ -69,7 +74,13 @@
   let autoStartThreshold = clamp(Number(readStored('gpsDriveAutoStartThreshold','5')) || 5,1,30);
   let autoCheckpointsEnabled = readStored('gpsDriveAutoCheckpoints','true') !== 'false';
   let checkpointRadius = clamp(Number(readStored('gpsDriveCheckpointRadius','20')) || 20,5,100);
-  let checkpoints = [];
+  let draftMarks = [];
+  let tracks = [];
+  let activeTrackId = readStored('gpsDriveSelectedTrack','');
+  let nextTrackNumber = Math.max(1,Number(readStored('gpsDriveNextTrackNumber','1')) || 1);
+  let activeTrackRun = null;
+  let trackStartNearby = false;
+  let trackFinishNearby = false;
   let sessionHistory = [];
   let lapEntries = [];
   let lapNumber = 0;
@@ -187,7 +198,6 @@
     drawGauge(speed);
     if (accuracy !== null && accuracy !== undefined) lastAccuracy = accuracy;
     $('accuracy').textContent = lastAccuracy == null ? '--' : Math.round(lastAccuracy) + ' m';
-    $('gpsAccuracy').textContent = lastAccuracy == null ? '--' : Math.round(lastAccuracy) + ' m';
     if (speed > maximumSpeed) {
       maximumSpeed = speed;
       $('maximum').textContent = maximumSpeed.toFixed(1);
@@ -196,7 +206,7 @@
     updateMean();
     updateLimitIndicator();
     updateSourceIndicator(source);
-    if (source && autoStartEnabled && !lapRunning && speed >= autoStartThreshold) {
+    if (source && !getActiveTrack() && autoStartEnabled && !lapRunning && speed >= autoStartThreshold) {
       startLap(source === 'gps' ? 'AUTO GPS' : 'AUTO SIM',Date.now());
     }
   }
@@ -262,7 +272,7 @@
       else shape.removeAttribute('filter');
       tab.setAttribute('aria-current',active ? 'page' : 'false');
     });
-    if (page === 'gps') { renderCheckpoints(); renderHistory(); }
+    if (page === 'gps') { renderTrackDraft(); renderTrackList(); renderTrackResults(); }
     if (page === 'laps') renderLaps();
   }
 
@@ -279,8 +289,7 @@
     speed = 0; maximumSpeed = 0; distanceKm = 0; movingDistanceKm = 0; movingTimeMs = 0;
     lastPosition = null; lastAccuracy = null;
     $('distance').textContent = '0.00'; $('maximum').textContent = '0.0'; $('maxInline').textContent = '0';
-    $('duration').textContent = '00:00'; $('accuracy').textContent = '--'; $('gpsAccuracy').textContent = '--';
-    $('latitude').textContent = '--'; $('longitude').textContent = '--'; $('altitude').textContent = '--';
+    $('duration').textContent = '00:00'; $('accuracy').textContent = '--';
     updateMean(); drawGauge(0); updateLimitIndicator();
   }
 
@@ -327,16 +336,19 @@
   }
 
   function updateCoordinates(coords) {
-    $('latitude').textContent = coords.latitude.toFixed(6);
-    $('longitude').textContent = coords.longitude.toFixed(6);
-    $('altitude').textContent = coords.altitude == null ? '--' : Math.round(coords.altitude) + ' m';
+    const accuracy = coords.accuracy == null ? '--' : Math.round(coords.accuracy) + ' M';
+    $('trackDraftFeedback').textContent = 'GPS REAL · PRECISIÓN ' + accuracy;
   }
 
   function processPosition(position) {
     if (!gpsActive) return;
     const coords = position.coords;
     const timestamp = Number(position.timestamp) || Date.now();
-    const current = {latitude:coords.latitude,longitude:coords.longitude,timestamp,speed:0};
+    const current = {
+      latitude:coords.latitude,longitude:coords.longitude,timestamp,speed:0,
+      altitude:coords.altitude == null ? null : coords.altitude,
+      accuracy:coords.accuracy == null ? null : coords.accuracy
+    };
     let segmentKm = 0, elapsed = 0, segmentSpeed = 0;
     if (lastPosition) {
       elapsed = timestamp - lastPosition.timestamp;
@@ -360,8 +372,8 @@
     updateSpeedDisplay(gpsSpeed,coords.accuracy,'gps');
     $('distance').textContent = distanceKm.toFixed(2);
     updateMean();
-    evaluateCheckpoints(current,timestamp);
-    if (autoStartEnabled && !lapRunning && gpsSpeed >= autoStartThreshold) startLap('AUTO GPS',timestamp);
+    evaluateActiveTrack(current,timestamp);
+    if (!getActiveTrack() && autoStartEnabled && !lapRunning && gpsSpeed >= autoStartThreshold) startLap('AUTO GPS',timestamp);
   }
 
   function setGpsStatus(message,state) {
@@ -376,6 +388,8 @@
       if (watchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchId);
       watchId = null; gpsActive = false;
       clearInterval(tripTimer); tripTimer = null;
+      if (lapRunning && lapStartedBy === 'TRACK GPS') stopLap();
+      activeTrackRun = null; trackStartNearby = false; trackFinishNearby = false;
       setDisabled('startGPS',false); setDisabled('stopGPS',true);
       activeSource = null;
       finishSession();
@@ -389,7 +403,7 @@
       setGpsStatus('GPS NO DISPONIBLE','error');
       return;
     }
-    gpsActive = true; activeSource = 'gps'; lastPosition = null; insideCheckpoints.clear();
+    gpsActive = true; activeSource = 'gps'; lastPosition = null;
     beginSession('GPS REAL');
     setGpsStatus('BUSCANDO GPS','connected');
     setDisabled('startGPS',true); setDisabled('stopGPS',false);
@@ -408,7 +422,8 @@
     if (watchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchId);
     watchId = null; gpsActive = false;
     clearInterval(tripTimer); tripTimer = null;
-    if (lapRunning && lapStartedBy.indexOf('AUTO') === 0) stopLap();
+    if (lapRunning && (lapStartedBy.indexOf('AUTO') === 0 || lapStartedBy === 'TRACK GPS')) stopLap();
+    activeTrackRun = null; trackStartNearby = false; trackFinishNearby = false;
     setDisabled('startGPS',false); setDisabled('stopGPS',true);
     activeSource = null; updateSourceIndicator(null);
     updateSpeedDisplay(0,null,null);
@@ -470,12 +485,16 @@
   }
   bindButton('testToggle',() => toggleSimulation());
 
-  function svgXFromEvent(event) {
+  function svgPointFromEvent(event) {
     const svg = document.querySelector('.artboard');
-    if (!svg || !svg.createSVGPoint || !svg.getScreenCTM()) return 857;
+    if (!svg || !svg.createSVGPoint || !svg.getScreenCTM()) return null;
     const point = svg.createSVGPoint();
     point.x = event.clientX; point.y = event.clientY;
-    return point.matrixTransform(svg.getScreenCTM().inverse()).x;
+    return point.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function svgXFromEvent(event) {
+    const point = svgPointFromEvent(event);
+    return point ? point.x : 857;
   }
   function setSliderFromEvent(event) {
     const x = svgXFromEvent(event);
@@ -522,9 +541,10 @@
     if (lapRunning) $('lapClock').textContent = formatLap(Date.now() - lapStartTime);
   }
   function updateLapStatus() {
-    const finish = checkpoints.find(point => point.finishLine);
-    $('lapAutoStatus').textContent = (autoStartEnabled ? 'AUTO START ≥ ' + autoStartThreshold + ' KM/H' : 'AUTO START OFF') +
-      ' · ' + (finish ? 'META CP ' + String(checkpoints.indexOf(finish) + 1).padStart(2,'0') : 'FINISH CHECKPOINT NOT SET');
+    const track = getActiveTrack();
+    $('lapAutoStatus').textContent = track
+      ? 'TRACK GPS ACTIVO · ' + track.name + ' · START / FINISH'
+      : (autoStartEnabled ? 'AUTO START ≥ ' + autoStartThreshold + ' KM/H' : 'AUTO START OFF') + ' · SELECCIONA UN TRACK EN GPS';
   }
   function startLap(source = 'MANUAL',timestamp = Date.now()) {
     if (lapRunning) return;
@@ -551,6 +571,10 @@
     updateLapClock(); lapRunning = false;
     clearInterval(lapTimer); lapTimer = null;
     setDisabled('lapStart',false); setDisabled('lapStop',true);
+    if (lapStartedBy === 'TRACK GPS') {
+      activeTrackRun = null; trackStartNearby = false; trackFinishNearby = false;
+      lapStartedBy = '';
+    }
   }
   function resetLap() {
     stopLap(); lapNumber = 0; lapEntries = [];
@@ -562,96 +586,305 @@
   bindButton('lapStop',stopLap);
   bindButton('lapReset',resetLap);
 
-  function persistCheckpoints() {
-    writeStored('gpsDriveCheckpoints',JSON.stringify(checkpoints));
-    renderCheckpoints(); updateLapStatus(); updateSettingsView();
-  }
-  function addCheckpoint(position = lastPosition) {
-    if (!position || activeSource !== 'gps') {
-      $('checkpointFeedback').textContent = 'SE NECESITA UNA POSICIÓN GPS REAL';
-      return;
-    }
-    checkpoints.push({
-      id:'cp-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
-      latitude:position.latitude,longitude:position.longitude,finishLine:checkpoints.length === 0,
-      createdAt:Date.now(),hits:[]
+  const trackScrollers = {
+    draft:{viewport:'trackDraftViewport',content:'trackDraftContent',thumb:'trackDraftScrollThumb',top:401,bottom:678,x:519,viewportHeight:281,rowHeight:36,offset:0},
+    list:{viewport:'trackListViewport',content:'trackListContent',thumb:'trackListScrollThumb',top:373,bottom:707,x:1028,viewportHeight:336,rowHeight:58,offset:0},
+    results:{viewport:'trackResultsViewport',content:'trackResultsContent',thumb:'trackResultsScrollThumb',top:375,bottom:707,x:1524,viewportHeight:333,rowHeight:46,offset:0}
+  };
+
+  function bindListAction(element,handler) {
+    element.addEventListener('click',event => { event.preventDefault(); event.stopPropagation(); handler(event); });
+    element.addEventListener('keydown',event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault(); event.stopPropagation(); handler(event);
     });
-    $('checkpointFeedback').textContent = 'CHECKPOINT GUARDADO';
-    persistCheckpoints();
   }
-  function renderCheckpoints() {
-    const list = $('checkpointList');
-    if (!list) return;
-    list.replaceChildren();
-    if (!checkpoints.length) {
-      list.append(textNode(110,594,'NO HAY CHECKPOINTS · GUARDA UNO CON GPS ACTIVO','page-small'));
+  function setScrollerOffset(name,value) {
+    const state = trackScrollers[name];
+    state.offset = clamp(value,0,state.maxOffset);
+    $(state.content).setAttribute('transform','translate(0 ' + -state.offset + ')');
+    updateScrollerThumb(name);
+  }
+  function updateScrollerThumb(name,totalHeight) {
+    const state = trackScrollers[name];
+    if (totalHeight !== undefined) state.contentHeight = totalHeight;
+    state.contentHeight = Math.max(state.viewportHeight,state.contentHeight || state.viewportHeight);
+    state.maxOffset = Math.max(0,state.contentHeight - state.viewportHeight);
+    state.offset = clamp(state.offset,0,state.maxOffset);
+    $(state.content).setAttribute('transform','translate(0 ' + -state.offset + ')');
+    const trackHeight = state.bottom - state.top;
+    const thumbHeight = state.maxOffset ? Math.max(28,trackHeight * state.viewportHeight / state.contentHeight) : trackHeight;
+    const thumbY = state.top + (state.maxOffset ? state.offset / state.maxOffset * (trackHeight - thumbHeight) : 0);
+    $(state.thumb).setAttribute('d','M' + state.x + ' ' + thumbY + 'V' + (thumbY + thumbHeight));
+    $(state.thumb).setAttribute('aria-valuemax',String(Math.ceil(state.maxOffset)));
+    $(state.thumb).setAttribute('aria-valuenow',String(Math.round(state.offset)));
+  }
+  function setupTrackScrollers() {
+    Object.entries(trackScrollers).forEach(([name,state]) => {
+      const viewport = $(state.viewport), thumb = $(state.thumb);
+      const drag = {startY:0,startOffset:0,active:false,moved:false,ignoreClick:false,thumbOffset:0};
+      viewport.addEventListener('wheel',event => {
+        event.preventDefault(); setScrollerOffset(name,state.offset + event.deltaY);
+      },{passive:false});
+      viewport.addEventListener('pointerdown',event => {
+        if (event.target === thumb) return;
+        const point = svgPointFromEvent(event);
+        drag.startY = point ? point.y : event.clientY; drag.startOffset = state.offset; drag.active = true; drag.moved = false;
+        if (viewport.setPointerCapture) viewport.setPointerCapture(event.pointerId);
+      });
+      viewport.addEventListener('pointermove',event => {
+        if (!drag.active) return;
+        const point = svgPointFromEvent(event);
+        const y = point ? point.y : event.clientY;
+        const delta = drag.startY - y;
+        if (Math.abs(delta) < 5 && !drag.moved) return;
+        drag.moved = true;
+        setScrollerOffset(name,drag.startOffset + delta);
+        event.preventDefault();
+      });
+      viewport.addEventListener('pointerup',() => {
+        if (drag.moved) {
+          drag.ignoreClick = true;
+          setTimeout(() => { drag.ignoreClick = false; },500);
+        }
+        drag.active = false;
+      });
+      viewport.addEventListener('pointercancel',() => { drag.active = false; });
+      viewport.addEventListener('click',event => {
+        if (!drag.ignoreClick) return;
+        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); drag.ignoreClick = false;
+      },true);
+      thumb.addEventListener('pointerdown',event => {
+        event.preventDefault(); event.stopPropagation();
+        const point = svgPointFromEvent(event);
+        drag.startY = point ? point.y : event.clientY; drag.startOffset = state.offset; drag.active = true; drag.moved = false; drag.thumbOffset = state.offset;
+        if (thumb.setPointerCapture) thumb.setPointerCapture(event.pointerId);
+      });
+      thumb.addEventListener('pointermove',event => {
+        if (!drag.active) return;
+        const point = svgPointFromEvent(event);
+        const y = point ? point.y : event.clientY;
+        const trackHeight = state.bottom - state.top;
+        const thumbLength = trackHeight - (state.maxOffset ? state.maxOffset / state.contentHeight * trackHeight : 0);
+        const scrollRange = trackHeight - thumbLength;
+        if (!scrollRange) return;
+        const startPoint = point ? drag.startY : drag.startY;
+        const delta = y - startPoint;
+        if (Math.abs(delta) < 2 && !drag.moved) return;
+        drag.moved = true;
+        setScrollerOffset(name,drag.startOffset + delta / scrollRange * state.maxOffset);
+      });
+      thumb.addEventListener('pointerup',() => { drag.active = false; });
+      thumb.addEventListener('pointercancel',() => { drag.active = false; });
+      thumb.addEventListener('keydown',event => {
+        const step = state.rowHeight;
+        if (event.key === 'ArrowDown' || event.key === 'ArrowRight') setScrollerOffset(name,state.offset + step);
+        else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') setScrollerOffset(name,state.offset - step);
+        else if (event.key === 'Home') setScrollerOffset(name,0);
+        else if (event.key === 'End') setScrollerOffset(name,state.maxOffset);
+        else return;
+        event.preventDefault();
+      });
+      updateScrollerThumb(name,state.viewportHeight);
+    });
+  }
+  function getActiveTrack() { return tracks.find(track => track.id === activeTrackId) || null; }
+  function getTrackDistanceKm(track) {
+    return track.marks.slice(1).reduce((sum,mark,index) => sum + calculateDistance(track.marks[index],mark),0);
+  }
+  function saveTracks() {
+    writeStored('gpsDriveTracks',JSON.stringify(tracks));
+    writeStored('gpsDriveNextTrackNumber',String(nextTrackNumber));
+    renderTrackList(); renderTrackResults(); updateLapStatus(); updateSettingsView();
+  }
+  function captureTrackMark() {
+    if (!lastPosition || activeSource !== 'gps') {
+      $('trackDraftFeedback').textContent = 'ACTIVA GPS REAL PARA REGISTRAR';
       return;
     }
-    const visible = checkpoints.slice(-5);
-    const offset = checkpoints.length - visible.length;
-    visible.forEach((point,index) => {
-      const originalIndex = offset + index;
-      const y = 590 + index * 31;
-      const row = makeSvg('g'); row.classList.add('dynamic-row'); row.setAttribute('id','checkpoint-row-' + point.id);
-      row.append(textNode(110,y,'CP' + String(originalIndex + 1).padStart(2,'0') + '  ' + point.latitude.toFixed(5) + ', ' + point.longitude.toFixed(5),'data-row-label'));
-      const lastHit = point.hits[point.hits.length - 1];
-      row.append(textNode(590,y,point.hits.length + ' PASOS' + (lastHit ? ' · ' + formatStamp(lastHit.timestamp) : ''),'data-row-small'));
-      const finish = textNode(690,y,point.finishLine ? 'META GPS' : 'MARCAR META','data-action-label');
-      finish.classList.add('interactive');
-      const remove = textNode(816,y,'×','data-action-label','end'); remove.classList.add('interactive');
-      row.append(finish,remove);
-      finish.addEventListener('click',event => { event.stopPropagation(); toggleFinishLine(point.id); });
-      remove.addEventListener('click',event => { event.stopPropagation(); deleteCheckpoint(point.id); });
-      finish.addEventListener('keydown',event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleFinishLine(point.id); } });
-      list.append(row);
-      if (index < visible.length - 1) {
-        const line = makeSvg('path'); line.setAttribute('d','M100 ' + (y + 9) + 'H830'); line.setAttribute('class','page-separator'); list.append(line);
+    const index = draftMarks.length;
+    if (index >= 2) draftMarks[index - 1].type = 'CHECKPOINT#' + (index - 1);
+    draftMarks.push({
+      type:index === 0 ? 'START' : 'FINISH',
+      latitude:lastPosition.latitude,longitude:lastPosition.longitude,
+      altitude:lastPosition.altitude,accuracy:lastPosition.accuracy,
+      timestamp:lastPosition.timestamp || Date.now(),gpsTimestamp:lastPosition.timestamp
+    });
+    $('trackDraftFeedback').textContent = 'MARCA REGISTRADA · ' + draftMarks[draftMarks.length - 1].type;
+    renderTrackDraft();
+  }
+  function renderTrackDraft() {
+    const content = $('trackDraftContent'); content.replaceChildren();
+    if (!draftMarks.length) content.append(textNode(96,448,'ESPERANDO MARCAS GPS REALES','page-small'));
+    draftMarks.forEach((mark,index) => {
+      const y = 424 + index * trackScrollers.draft.rowHeight;
+      content.append(textNode(96,y,mark.type,'data-row-label'));
+      content.append(textNode(502,y,'GPS · ' + formatStamp(mark.timestamp),'data-row-small','end'));
+      if (index < draftMarks.length - 1) {
+        const line = makeSvg('path'); line.setAttribute('d','M92 ' + (y + 10) + 'H506'); line.setAttribute('class','page-separator'); content.append(line);
       }
     });
-    if (offset > 0) list.append(textNode(110,748,'+' + offset + ' CHECKPOINTS ANTERIORES','page-small'));
+    $('draftMarkCount').textContent = draftMarks.length + ' MARCAS' + (draftMarks.length < 2 ? ' · NECESITAS 2' : ' · LISTO PARA CREAR');
+    setDisabled('createTrack',draftMarks.length < 2);
+    updateScrollerThumb('draft',Math.max(trackScrollers.draft.viewportHeight,draftMarks.length * trackScrollers.draft.rowHeight + 30));
   }
-  function toggleFinishLine(id) {
-    checkpoints = checkpoints.map(point => ({...point,finishLine:point.id === id ? !point.finishLine : false}));
-    persistCheckpoints();
-  }
-  function deleteCheckpoint(id) {
-    checkpoints = checkpoints.filter(point => point.id !== id);
-    insideCheckpoints.delete(id); persistCheckpoints();
-  }
-  function evaluateCheckpoints(position,timestamp) {
-    if (!autoCheckpointsEnabled) return;
-    checkpoints.forEach((point,index) => {
-      const fromPoint = calculateDistance(point,{latitude:position.latitude,longitude:position.longitude}) * 1000;
-      if (insideCheckpoints.has(point.id) && fromPoint > checkpointRadius + 10) insideCheckpoints.delete(point.id);
-      if (fromPoint > checkpointRadius || insideCheckpoints.has(point.id)) return;
-      insideCheckpoints.add(point.id);
-      const hit = {timestamp,latitude:position.latitude,longitude:position.longitude,distanceM:Math.round(fromPoint)};
-      point.hits.push(hit); point.hits = point.hits.slice(-20);
-      $('checkpointFeedback').textContent = 'PASO CP' + String(index + 1).padStart(2,'0') + ' · ' + formatStamp(timestamp);
-      if (point.finishLine && lapRunning) markLap(timestamp,'GPS META');
-      writeStored('gpsDriveCheckpoints',JSON.stringify(checkpoints));
-      renderCheckpoints();
+  function renderTrackList() {
+    const content = $('trackListContent'); content.replaceChildren();
+    if (!tracks.length) content.append(textNode(594,411,'AÚN NO HAY TRACKS','page-small'));
+    tracks.forEach((track,index) => {
+      const y = 397 + index * trackScrollers.list.rowHeight;
+      const row = makeSvg('g'); row.setAttribute('class','track-row' + (track.id === activeTrackId ? ' is-selected' : ''));
+      if (track.id === activeTrackId) {
+        const bg = makeSvg('path'); bg.setAttribute('d','M584 ' + (y - 22) + 'H1014V' + (y + 31) + 'H584Z'); bg.setAttribute('class','track-row-highlight'); row.append(bg);
+      }
+      const name = textNode(596,y,track.name,'track-name interactive');
+      name.setAttribute('id','track-name-' + track.id); name.setAttribute('role','button'); name.setAttribute('tabindex','0');
+      name.setAttribute('aria-label','Renombrar ' + track.name); name.setAttribute('data-keyboard-type','alphanumeric'); name.setAttribute('data-keyboard-label','NOMBRE DEL TRACK');
+      name.setAttribute('textLength','272'); name.setAttribute('lengthAdjust','spacingAndGlyphs'); row.append(name);
+      row.append(textNode(596,y + 22,track.marks.length + ' MARCAS · ' + getTrackDistanceKm(track).toFixed(2) + ' KM','data-row-small'));
+      const use = makeSvg('g'); use.setAttribute('id','track-use-' + track.id); use.setAttribute('class','interactive track-use-button'); use.setAttribute('role','button'); use.setAttribute('tabindex','0'); use.setAttribute('aria-label','Cargar ' + track.name + ' en Lap Time');
+      const shape = makeSvg('path'); shape.setAttribute('d','M927 ' + (y - 18) + 'H1018L1008 ' + (y + 10) + 'H917Z'); shape.setAttribute('class','track-use-shape');
+      const label = textNode(967,y + 2,track.id === activeTrackId ? 'ACTIVO' : 'CARGAR','track-use-label','middle'); use.append(shape,label); row.append(use);
+      bindListAction(name,() => openConfigurationKeyboard(name,{
+        value:track.name,
+        validate:value => {
+          const clean = value.trim();
+          if (!clean) return 'EL NOMBRE NO PUEDE ESTAR VACÍO';
+          if (clean.length > 32) return 'MÁXIMO 32 CARACTERES';
+          if (tracks.some(other => other.id !== track.id && other.name.toLocaleLowerCase() === clean.toLocaleLowerCase())) return 'ESE NOMBRE YA EXISTE';
+          return '';
+        },
+        commit:value => {
+          track.name = value.trim();
+          const sequenceMatch = track.name.match(/^TRACK\s*#(\d+)$/i);
+          if (sequenceMatch) nextTrackNumber = Math.max(nextTrackNumber,Number(sequenceMatch[1]) + 1);
+          saveTracks();
+        }
+      }));
+      bindListAction(use,() => selectTrack(track.id));
+      content.append(row);
+      if (index < tracks.length - 1) {
+        const line = makeSvg('path'); line.setAttribute('d','M590 ' + (y + 33) + 'H1018'); line.setAttribute('class','page-separator'); content.append(line);
+      }
     });
+    updateScrollerThumb('list',Math.max(trackScrollers.list.viewportHeight,tracks.length * trackScrollers.list.rowHeight));
   }
-  bindButton('saveCheckpoint',() => addCheckpoint());
+  function renderTrackResults() {
+    const content = $('trackResultsContent'); content.replaceChildren();
+    if (!tracks.length) content.append(textNode(1092,413,'SIN TRACKS REGISTRADOS','page-small'));
+    const rows = tracks.map(track => ({track,best:(track.results || []).slice().sort((a,b) => a.lapTimeMs - b.lapTimeMs)[0] || null}))
+      .sort((a,b) => (a.best ? a.best.lapTimeMs : Infinity) - (b.best ? b.best.lapTimeMs : Infinity) || a.track.number - b.track.number);
+    rows.forEach(({track,best},index) => {
+      const y = 397 + index * trackScrollers.results.rowHeight;
+      const name = textNode(1092,y,track.name,'data-row-label'); name.setAttribute('textLength','192'); name.setAttribute('lengthAdjust','spacingAndGlyphs'); content.append(name);
+      content.append(textNode(1360,y,best ? Number(best.routeDistanceKm).toFixed(2) : '--','data-row-label','middle'));
+      content.append(textNode(1500,y,best ? formatTrackClock(best.lapTimeMs) : '--:--:--','data-row-label','end'));
+      if (index < rows.length - 1) {
+        const line = makeSvg('path'); line.setAttribute('d','M1088 ' + (y + 12) + 'H1516'); line.setAttribute('class','page-separator'); content.append(line);
+      }
+    });
+    updateScrollerThumb('results',Math.max(trackScrollers.results.viewportHeight,rows.length * trackScrollers.results.rowHeight));
+  }
+  function persistNewTrack() {
+    if (draftMarks.length < 2) return;
+    const number = nextTrackNumber++;
+    tracks.push({
+      id:'track-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),number,
+      name:'TRACK #' + number,createdAt:Date.now(),
+      marks:draftMarks.map(mark => ({...mark})),results:[]
+    });
+    draftMarks = [];
+    $('trackDraftFeedback').textContent = activeSource === 'gps' ? 'TRACK GUARDADO · PUEDES REGISTRAR OTRO' : 'TRACK GUARDADO · GPS DESCONECTADO';
+    saveTracks(); renderTrackDraft();
+  }
+  function selectTrack(id) {
+    const track = tracks.find(item => item.id === id);
+    if (!track) return;
+    if (lapRunning && (lapStartedBy === 'TRACK GPS' || lapStartedBy.indexOf('AUTO') === 0)) stopLap();
+    activeTrackRun = null; trackStartNearby = false; trackFinishNearby = false;
+    activeTrackId = id; writeStored('gpsDriveSelectedTrack',id);
+    renderTrackList(); updateLapStatus(); updateSettingsView();
+  }
+  bindButton('addTrackMark',captureTrackMark);
+  bindButton('createTrack',persistNewTrack);
 
-  function renderHistory() {
-    const list = $('sessionHistory');
-    if (!list) return;
-    list.replaceChildren();
-    if (!sessionHistory.length) {
-      list.append(textNode(920,405,'NO HAY SESIONES GUARDADAS','page-small'));
-      return;
-    }
-    sessionHistory.slice(-6).reverse().forEach((entry,index) => {
-      const y = 400 + index * 52;
-      const date = formatStamp(entry.endedAt);
-      list.append(textNode(920,y,(entry.source === 'SIMULACIÓN' ? 'SIM · ' : 'GPS · ') + date,'data-row-label'));
-      list.append(textNode(920,y + 23,entry.distanceKm.toFixed(2) + ' KM  ·  MEDIA ' + Math.round(entry.averageSpeed) + '  ·  MÁX ' + entry.maxSpeed.toFixed(1),'data-row-small'));
-      list.append(textNode(1480,y,formatClock(entry.durationMs),'data-row-label','end'));
-      if (index < 5) { const line = makeSvg('path'); line.setAttribute('d','M920 ' + (y + 32) + 'H1480'); line.setAttribute('class','page-separator'); list.append(line); }
-    });
+  function distanceFromTrackMarkKm(mark,position) { return calculateDistance(mark,position); }
+  function appendTrackTelemetry(position,timestamp) {
+    if (!activeTrackRun) return;
+    activeTrackRun.maxSpeed = Math.max(activeTrackRun.maxSpeed,speed);
+    const sample = {
+      timestamp,latitude:position.latitude,longitude:position.longitude,altitude:position.altitude,
+      accuracy:position.accuracy,speedKmh:speed,distanceKm:Math.max(0,distanceKm - activeTrackRun.startDistanceKm)
+    };
+    activeTrackRun.samples.push(sample);
   }
+  function evaluateActiveTrack(position,timestamp) {
+    const track = getActiveTrack();
+    if (!track || track.marks.length < 2) return;
+    const start = track.marks[0], finish = track.marks[track.marks.length - 1];
+    const startDistanceM = distanceFromTrackMarkKm(start,position) * 1000;
+    const finishDistanceM = distanceFromTrackMarkKm(finish,position) * 1000;
+    if (startDistanceM > checkpointRadius + 10) trackStartNearby = false;
+    if (finishDistanceM > checkpointRadius + 10) {
+      trackFinishNearby = false;
+      if (activeTrackRun && activeTrackRun.trackId === track.id) activeTrackRun.finishArmed = true;
+    }
+    if (!lapRunning && !trackStartNearby && startDistanceM <= checkpointRadius && speed >= movingThreshold) {
+      trackStartNearby = true;
+      activeTrackRun = {
+        trackId:track.id,startedAt:timestamp,startDistanceKm:distanceKm,
+        startMovingDistanceKm:movingDistanceKm,startMovingTimeMs:movingTimeMs,
+        maxSpeed:speed,finishArmed:finishDistanceM > checkpointRadius + 10,samples:[],checkpointSplits:[],visitedCheckpoints:{}
+      };
+      startLap('TRACK GPS',timestamp);
+    }
+    if (!lapRunning || lapStartedBy !== 'TRACK GPS' || !activeTrackRun || activeTrackRun.trackId !== track.id) return;
+    appendTrackTelemetry(position,timestamp);
+    if (autoCheckpointsEnabled) {
+      track.marks.slice(1,-1).forEach((mark,index) => {
+        const markIndex = index + 1;
+        if (activeTrackRun.visitedCheckpoints[markIndex]) return;
+        const distanceM = distanceFromTrackMarkKm(mark,position) * 1000;
+        if (distanceM <= checkpointRadius) {
+          activeTrackRun.visitedCheckpoints[markIndex] = true;
+          activeTrackRun.checkpointSplits.push({
+            markIndex,type:mark.type,timestamp,elapsedMs:Math.max(0,timestamp - activeTrackRun.startedAt),
+            latitude:position.latitude,longitude:position.longitude,accuracy:position.accuracy
+          });
+        }
+      });
+    }
+    if (activeTrackRun.finishArmed && finishDistanceM <= checkpointRadius && !trackFinishNearby) {
+      trackFinishNearby = true;
+      completeTrackLap(track,timestamp,position);
+    }
+  }
+  function completeTrackLap(track,timestamp,position) {
+    const run = activeTrackRun;
+    if (!run || run.trackId !== track.id) return;
+    appendTrackTelemetry(position,timestamp);
+    const lapTimeMs = Math.max(0,timestamp - run.startedAt);
+    const movementTime = Math.max(0,movingTimeMs - run.startMovingTimeMs);
+    const movementDistance = Math.max(0,movingDistanceKm - run.startMovingDistanceKm);
+    const result = {
+      id:'result-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
+      startedAt:run.startedAt,endedAt:timestamp,lapTimeMs,routeDistanceKm:getTrackDistanceKm(track),
+      maxSpeed:run.maxSpeed,averageSpeed:movementTime ? movementDistance / (movementTime / 3600000) : 0,
+      telemetry:run.samples,checkpointSplits:run.checkpointSplits
+    };
+    track.results = [...(track.results || []),result];
+    lapNumber++;
+    lapEntries.unshift({number:lapNumber,durationMs:lapTimeMs,source:'TRACK GPS',trackId:track.id,endedAt:timestamp});
+    lapEntries = lapEntries.slice(0,20);
+    writeStored('gpsDriveLaps',JSON.stringify(lapEntries));
+    activeTrackRun = null; lapRunning = false; lapStartedBy = '';
+    clearInterval(lapTimer); lapTimer = null;
+    $('lapClock').textContent = formatLap(lapTimeMs);
+    setDisabled('lapStart',false); setDisabled('lapStop',true);
+    saveTracks(); renderLaps();
+  }
+
+  function renderHistory() {}
 
   function updateSettingsView() {
     $('limitReadout').textContent = String(limit);
@@ -666,8 +899,10 @@
     $('autoStartThreshold').textContent = autoStartThreshold + ' KM/H';
     $('autoCheckpointValue').textContent = autoCheckpointsEnabled ? 'ACTIVADOS' : 'DESACTIVADOS';
     $('checkpointRadius').textContent = checkpointRadius + ' M';
-    const finish = checkpoints.find(point => point.finishLine);
-    $('finishCheckpointValue').textContent = finish ? 'CP' + String(checkpoints.indexOf(finish) + 1).padStart(2,'0') : 'NO CONFIGURADA';
+    const selectedTrack = getActiveTrack();
+    $('finishCheckpointValue').textContent = selectedTrack ? selectedTrack.name : 'NO TRACK SELECCIONADO';
+    $('finishCheckpointValue').setAttribute('textLength','560');
+    $('finishCheckpointValue').setAttribute('lengthAdjust','spacingAndGlyphs');
     const autoTrack = $('autoStartToggle').querySelector('.toggle-track');
     const autoKnob = $('autoStartToggle').querySelector('.toggle-knob');
     autoTrack.classList.toggle('is-on',autoStartEnabled); autoTrack.setAttribute('fill',autoStartEnabled ? '#078aff' : '#13263a');
@@ -749,27 +984,32 @@
       addKeyboardKey('keyboard-digit-0','0','0',750,548,100,90);
       addKeyboardKey('keyboard-confirm','✓','CONFIRM',860,548,90,90,'confirm','Validar y guardar');
     } else {
-      panel.setAttribute('d','M420 135 445 110H1155L1180 135V665L1155 690H445L420 665Z');
-      divider.setAttribute('d','M466 184H1134');
+      panel.setAttribute('d','M245 135 270 110H1330L1355 135V665L1330 690H270L245 665Z');
+      divider.setAttribute('d','M292 184H1308');
       const rows = [
-        ['1','2','3','4','5','6','7','8','9','0'],
         ['Q','W','E','R','T','Y','U','I','O','P'],
         ['A','S','D','F','G','H','J','K','L'],
         ['Z','X','C','V','B','N','M','⌫']
       ];
       rows.forEach((row,rowIndex) => {
-        const width = 52, gap = 7, total = row.length * width + (row.length - 1) * gap;
-        const startX = 800 - total / 2;
+        const width = 66, gap = 8, height = 64, total = row.length * width + (row.length - 1) * gap;
+        const startX = 686 - total / 2;
         row.forEach((value,column) => {
           const backspace = value === '⌫';
           const keyValue = backspace ? 'BACKSPACE' : value;
           addKeyboardKey('keyboard-alpha-' + rowIndex + '-' + column,backspace ? 'Borrar carácter' : value,keyValue,
-            startX + column * (width + gap),252 + rowIndex * 60,width,50,backspace ? 'cancel' : '');
+            startX + column * (width + gap),255 + rowIndex * 72,width,height,backspace ? 'cancel' : '');
         });
       });
-      addKeyboardKey('keyboard-cancel','X','CANCEL',628,526,76,68,'cancel','Cancelar y descartar cambios');
-      addKeyboardKey('keyboard-space','Espacio','SPACE',716,526,168,68,'space');
-      addKeyboardKey('keyboard-confirm','✓','CONFIRM',896,526,76,68,'confirm','Validar y guardar');
+      const numbers = ['1','2','3','4','5','6','7','8','9'];
+      numbers.forEach((value,index) => {
+        const row = Math.floor(index / 3), column = index % 3;
+        addKeyboardKey('keyboard-alpha-number-' + value,value,value,1080 + column * 72,270 + row * 72,64,64);
+      });
+      addKeyboardKey('keyboard-alpha-number-0','0','0',1152,486,80,64);
+      addKeyboardKey('keyboard-cancel','X','CANCEL',638,560,82,72,'cancel','Cancelar y descartar cambios');
+      addKeyboardKey('keyboard-space','ESPACIO','SPACE',730,560,140,72,'space');
+      addKeyboardKey('keyboard-confirm','✓','CONFIRM',880,560,82,72,'confirm','Validar y guardar');
     }
     $('keyboardTitle').textContent = keyboardTarget.getAttribute('data-keyboard-label') || 'CONFIGURAR VALOR';
     updateKeyboardPreview();
@@ -824,18 +1064,26 @@
     commit:value => { limit = Number(value); saveSettings(); }
   }));
 
-  function normalizeCheckpoints(raw) {
+  function normalizeTracks(raw) {
     if (!Array.isArray(raw)) return [];
-    return raw.filter(point => Number.isFinite(Number(point.lat ?? point.latitude)) && Number.isFinite(Number(point.lon ?? point.longitude)))
-      .map((point,index) => ({
-        id:point.id || 'cp-restored-' + index + '-' + Math.random().toString(36).slice(2,6),
-        latitude:Number(point.latitude ?? point.lat),longitude:Number(point.longitude ?? point.lon),
-        finishLine:Boolean(point.finishLine),createdAt:Number(point.createdAt) || Date.now(),
-        hits:Array.isArray(point.hits) ? point.hits : []
-      }));
+    return raw.filter(track => track && Array.isArray(track.marks) && track.marks.length >= 2)
+      .map((track,index) => ({
+        id:String(track.id || 'track-restored-' + index),
+        number:Math.max(1,Number(track.number) || index + 1),
+        name:String(track.name || 'TRACK #' + (Number(track.number) || index + 1)).slice(0,32),
+        createdAt:Number(track.createdAt) || Date.now(),
+        marks:track.marks.filter(mark => Number.isFinite(Number(mark.latitude)) && Number.isFinite(Number(mark.longitude)))
+          .map(mark => ({type:String(mark.type || 'CHECKPOINT'),latitude:Number(mark.latitude),longitude:Number(mark.longitude),
+            altitude:mark.altitude == null || !Number.isFinite(Number(mark.altitude)) ? null : Number(mark.altitude),
+            accuracy:mark.accuracy == null || !Number.isFinite(Number(mark.accuracy)) ? null : Number(mark.accuracy),
+            timestamp:Number(mark.timestamp) || Date.now(),gpsTimestamp:Number(mark.gpsTimestamp) || null})),
+        results:Array.isArray(track.results) ? track.results : []
+      })).filter(track => track.marks.length >= 2);
   }
-  try { checkpoints = normalizeCheckpoints(JSON.parse(readStored('gpsDriveCheckpoints','[]'))); }
-  catch (_) { checkpoints = []; }
+  try { tracks = normalizeTracks(JSON.parse(readStored('gpsDriveTracks','[]'))); }
+  catch (_) { tracks = []; }
+  nextTrackNumber = Math.max(nextTrackNumber,...tracks.map(track => track.number + 1),1);
+  if (!tracks.some(track => track.id === activeTrackId)) activeTrackId = '';
   try {
     const storedHistory = JSON.parse(readStored('gpsDriveSessions','[]'));
     sessionHistory = Array.isArray(storedHistory) ? storedHistory : [];
@@ -847,8 +1095,9 @@
   } catch (_) { lapEntries = []; }
 
   buildGauge();
+  setupTrackScrollers();
   updateSettingsView();
-  renderLaps(); renderCheckpoints(); renderHistory();
+  renderLaps(); renderTrackDraft(); renderTrackList(); renderTrackResults(); renderHistory();
   updateSourceIndicator(null);
   updateSpeedDisplay(0,null,null);
   updateLapStatus();
