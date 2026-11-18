@@ -520,7 +520,7 @@
   function updateLapStatus() {
     const track = getActiveTrack();
     $('lapAutoStatus').textContent = track
-      ? 'TRACK GPS ACTIVO · ' + track.name + (activeTrackReverse ? ' · REVERSE' : '')
+      ? 'TRACK GPS ACTIVO · ' + track.name + (activeTrackReverse ? ' (REVERSE)' : '')
       : 'SELECCIONA UN TRACK PARA TRACK TIME';
   }
   function startLap() {
@@ -616,7 +616,7 @@
     const record=run || getLatestTrackResult();
     $('lapAutoStatus').textContent=track ? (run
       ? (gpsFixAvailable?'MEDICIÓN EN CURSO · ':'GPS PERDIDO · VUELTA ABIERTA · ')+track.name
-      : 'TRACK CARGADO · '+track.name) : 'SELECCIONA UN TRACK PARA TRACK TIME';
+      : 'TRACK CARGADO · '+track.name)+(activeTrackReverse?' (REVERSE)':'') : 'SELECCIONA UN TRACK PARA TRACK TIME';
     const waiting=$('trackTimeWaiting');
     waiting.style.display=track && !run ? 'inline' : 'none';
     const list=$('trackTimeCheckpointList'); list.replaceChildren();
@@ -641,8 +641,7 @@
     const track=getActiveTrack(),route=getActiveRoute();
     const title=$('trackViewTitle');
     title.textContent=track?'LAP TIME VIEW - '+track.name:'LAP TIME VIEW - CARGAR UN TRACK';
-    if(track) { title.setAttribute('textLength','620'); title.setAttribute('lengthAdjust','spacingAndGlyphs'); }
-    else { title.removeAttribute('textLength'); title.removeAttribute('lengthAdjust'); }
+    title.removeAttribute('textLength'); title.removeAttribute('lengthAdjust');
     $('trackViewStatus').textContent=!track?'CARGA UN TRACK PARA VER SU PROGRESO':
       activeTrackRun?(gpsFixAvailable?'TRACK TIME EN CURSO · GPS ACTIVO':'GPS PERDIDO · VUELTA ABIERTA'):
       gpsFixAvailable?'TRACK CARGADO · ESPERANDO START O COUNTDOWN':'ESPERANDO CONEXIÓN GPS';
@@ -916,7 +915,7 @@
       const name = textNode(596,y,track.name,'track-name interactive');
       name.setAttribute('id','track-name-' + track.id); name.setAttribute('role','button'); name.setAttribute('tabindex','0');
       name.setAttribute('aria-label','Renombrar ' + track.name); name.setAttribute('data-keyboard-type','alphanumeric'); name.setAttribute('data-keyboard-label','NOMBRE DEL TRACK');
-      name.setAttribute('textLength','272'); name.setAttribute('lengthAdjust','spacingAndGlyphs'); row.append(name);
+      if(track.name.length>25){name.setAttribute('textLength','272');name.setAttribute('lengthAdjust','spacingAndGlyphs');} row.append(name);
       row.append(textNode(596,y + 22,track.marks.length + ' MARCAS · ' + getTrackDistanceKm(track).toFixed(2) + ' KM','data-row-small'));
       const use = makeSvg('g'); use.setAttribute('id','track-use-' + track.id); use.setAttribute('class','interactive track-use-button'); use.setAttribute('role','button'); use.setAttribute('tabindex','0'); use.setAttribute('aria-label','Cargar ' + track.name + ' en Lap Time');
       const shape = makeSvg('path'); shape.setAttribute('d','M927 ' + (y - 18) + 'H1018L1008 ' + (y + 10) + 'H917Z'); shape.setAttribute('class','track-use-shape');
@@ -980,7 +979,7 @@
     renderResultFilterLabel();
   }
   const dropdownConfig = {
-    lap:{group:'lapTrackOptions',clip:'url(#lapTrackOptionsClip)',x:105,y:365,width:477,height:330,rowHeight:36,kind:'lap'},
+    lap:{group:'lapTrackOptions',clip:'url(#lapTrackOptionsClip)',x:105,y:365,width:540,height:330,rowHeight:36,kind:'lap'},
     results:{group:'resultsFilterOptions',clip:'url(#resultsFilterOptionsClip)',x:1088,y:376,width:428,height:330,rowHeight:34,kind:'results'}
   };
   function closeTrackDropdown(kind) {
@@ -995,7 +994,7 @@
   function renderTrackPickers() {
     const track = tracks.find(item => item.id === selectedLapPickerId);
     $('lapTrackSelectLabel').textContent = track ? track.name : 'SELECCIONAR TRACK';
-    $('lapTrackSelectLabel').setAttribute('textLength','270'); $('lapTrackSelectLabel').setAttribute('lengthAdjust','spacingAndGlyphs');
+    $('lapTrackSelectLabel').removeAttribute('textLength'); $('lapTrackSelectLabel').removeAttribute('lengthAdjust');
     setDisabled('lapTrackLoad',!track);
     $('lapTrackLoad').setAttribute('aria-label',track ? 'Cargar ' + track.name + ' en Lap Time' : 'Selecciona un track para cargar');
     renderResultFilterLabel();
@@ -1025,7 +1024,7 @@
       shape.setAttribute('d','M' + (config.x + 5) + ' ' + rowY + 'H' + (config.x + config.width - 10) + 'V' + (rowY + config.rowHeight - 2) + 'H' + (config.x + 5) + 'Z');
       shape.setAttribute('class','track-dropdown-option-shape' + (selected ? ' is-current' : '')); item.append(shape);
       const label = textNode(config.x + 16,rowY + config.rowHeight * .69,option.label,'track-dropdown-option-label');
-      label.setAttribute('textLength',config.width - 46); label.setAttribute('lengthAdjust','spacingAndGlyphs'); item.append(label);
+      item.append(label);
       bindListAction(item,option.action); content.append(item);
     });
     const state = dropdownStates[kind];
@@ -1299,8 +1298,8 @@
     $('finishCheckpointValue').textContent = selectedTrack
       ? selectedTrack.name + (activeTrackReverse ? ' · FINISH → START' : ' · START → FINISH')
       : 'NO TRACK SELECCIONADO';
-    $('finishCheckpointValue').setAttribute('textLength','560');
-    $('finishCheckpointValue').setAttribute('lengthAdjust','spacingAndGlyphs');
+    $('finishCheckpointValue').removeAttribute('textLength');
+    $('finishCheckpointValue').removeAttribute('lengthAdjust');
     const cpTrack = $('autoCheckpointToggle').querySelector('.toggle-track');
     const cpKnob = $('autoCheckpointToggle').querySelector('.toggle-knob');
     cpTrack.classList.add('is-on'); cpTrack.setAttribute('fill','#078aff'); cpKnob.setAttribute('cx','1399');
