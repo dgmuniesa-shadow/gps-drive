@@ -501,14 +501,55 @@
     const list = $('lapList'); list.replaceChildren();
     const records=manualLapRecords.length?manualLapRecords:(showLegacyLapRecords?lapEntries:[]);
     if (!records.length) {
-      list.append(textNode(120,625,'NO HAY VUELTAS REGISTRADAS','page-small'));
+      list.append(textNode(120,580,'NO HAY VUELTAS REGISTRADAS','page-small'));
+      updateManualLapScroller(154);
       return;
     }
-    records.slice(-4).reverse().forEach((lap,index) => {
-      const y = 625 + index * 28;
+    records.forEach((lap,index) => {
+      const y = 580 + index * 28;
       list.append(textNode(125,y,'VUELTA ' + String(lap.number).padStart(2,'0'),'data-row-label'));
-      list.append(textNode(1480,y,formatLap(lap.durationMs),'data-row-label','end'));
+      list.append(textNode(1435,y,formatLap(lap.durationMs),'data-row-label','end'));
     });
+    updateManualLapScroller(records.length*28+18);
+  }
+  const manualLapScroller={offset:0,maxOffset:0,rowHeight:28,top:550,bottom:704,x:1478,viewportHeight:154,contentHeight:154};
+  function setManualLapScroll(value) {
+    const state=manualLapScroller;
+    state.offset=clamp(value,0,state.maxOffset);
+    $('lapList').setAttribute('transform','translate(0 '+(-state.offset)+')');
+    updateManualLapScroller();
+  }
+  function updateManualLapScroller(totalHeight) {
+    const state=manualLapScroller;
+    if(totalHeight!==undefined) state.contentHeight=Math.max(state.viewportHeight,totalHeight);
+    state.maxOffset=Math.max(0,state.contentHeight-state.viewportHeight);
+    state.offset=clamp(state.offset,0,state.maxOffset);
+    $('lapList').setAttribute('transform','translate(0 '+(-state.offset)+')');
+    const trackHeight=state.bottom-state.top;
+    const thumbHeight=state.maxOffset?Math.max(22,trackHeight*state.viewportHeight/state.contentHeight):trackHeight;
+    const thumbY=state.top+(state.maxOffset?state.offset/state.maxOffset*(trackHeight-thumbHeight):0);
+    const thumb=$('manualLapScrollThumb');
+    thumb.setAttribute('d','M'+state.x+' '+thumbY+'V'+(thumbY+thumbHeight));
+    thumb.setAttribute('aria-valuemax',String(Math.ceil(state.maxOffset)));
+    thumb.setAttribute('aria-valuenow',String(Math.round(state.offset)));
+  }
+  function setupManualLapScroller() {
+    const viewport=$('lapListViewport'),thumb=$('manualLapScrollThumb');
+    const drag={startY:0,startOffset:0,active:false};
+    viewport.addEventListener('wheel',event=>{event.preventDefault();setManualLapScroll(manualLapScroller.offset+event.deltaY);},{passive:false});
+    thumb.addEventListener('keydown',event=>{
+      const step=manualLapScroller.rowHeight;
+      if(event.key==='ArrowDown'||event.key==='ArrowRight')setManualLapScroll(manualLapScroller.offset+step);
+      else if(event.key==='ArrowUp'||event.key==='ArrowLeft')setManualLapScroll(manualLapScroller.offset-step);
+      else if(event.key==='Home')setManualLapScroll(0);
+      else if(event.key==='End')setManualLapScroll(manualLapScroller.maxOffset);
+      else return;
+      event.preventDefault();
+    });
+    thumb.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();const point=svgPointFromEvent(event);drag.startY=point?point.y:event.clientY;drag.startOffset=manualLapScroller.offset;drag.active=true;if(thumb.setPointerCapture)thumb.setPointerCapture(event.pointerId);});
+    thumb.addEventListener('pointermove',event=>{if(!drag.active)return;const point=svgPointFromEvent(event),y=point?point.y:event.clientY;const range=(manualLapScroller.bottom-manualLapScroller.top)-Math.max(22,(manualLapScroller.bottom-manualLapScroller.top)*manualLapScroller.viewportHeight/manualLapScroller.contentHeight);if(range>0)setManualLapScroll(drag.startOffset+(y-drag.startY)/range*manualLapScroller.maxOffset);});
+    thumb.addEventListener('pointerup',()=>{drag.active=false;});thumb.addEventListener('pointercancel',()=>{drag.active=false;});
+    updateManualLapScroller();
   }
   function manualLapElapsed() { return manualLapElapsedMs + (lapRunning ? Date.now() - lapStartTime : 0); }
   function updateLapClock() {
@@ -622,7 +663,7 @@
     const list=$('trackTimeCheckpointList'); list.replaceChildren();
     const splits=record && Array.isArray(record.checkpointSplits) ? record.checkpointSplits : [];
     splits.forEach((cp,index)=>{
-      const y=522+index*28;
+      const y=532+index*28;
       const row=makeSvg('g'); row.setAttribute('class','track-time-checkpoint-row');
       row.append(textNode(140,y,String(index+1).padStart(2,'0')+' · '+(cp.type||'CHECKPOINT'),'data-row-small'));
       row.append(textNode(1105,y,formatLap(Number(cp.elapsedMs)||0),'data-row-small','end'));
@@ -640,7 +681,7 @@
   function updateLapView() {
     const track=getActiveTrack(),route=getActiveRoute();
     const title=$('trackViewTitle');
-    title.textContent=track?'LAP TIME VIEW - '+track.name:'LAP TIME VIEW - CARGAR UN TRACK';
+    title.textContent=track?'LAP TIME VIEW - '+track.name+(activeTrackReverse?' (REVERSE)':''):'LAP TIME VIEW - CARGAR UN TRACK';
     title.removeAttribute('textLength'); title.removeAttribute('lengthAdjust');
     $('trackViewStatus').textContent=!track?'CARGA UN TRACK PARA VER SU PROGRESO':
       activeTrackRun?(gpsFixAvailable?'TRACK TIME EN CURSO · GPS ACTIVO':'GPS PERDIDO · VUELTA ABIERTA'):
@@ -669,8 +710,8 @@
     $('trackProgressFill').setAttribute('d','M445 722H'+x);
     $('trackProgressPointer').setAttribute('d','M'+x+' 702 '+(x-10)+' 688 '+(x+10)+' 688Z');
     const lapX=1120+340*ratio;
-    $('lapTrackProgressFill').setAttribute('d','M1120 378H'+lapX);
-    $('lapTrackProgressPointer').setAttribute('d','M'+lapX+' 367 '+(lapX-8)+' 355 '+(lapX+8)+' 355Z');
+    $('lapTrackProgressFill').setAttribute('d','M1120 390H'+lapX);
+    $('lapTrackProgressPointer').setAttribute('d','M'+lapX+' 379 '+(lapX-8)+' 367 '+(lapX+8)+' 367Z');
     $('trackViewProgress').textContent=Math.round(ratio*100)+'%';
     const latestSplit=latest?.checkpointSplits?.[latest.checkpointSplits.length-1];
     $('trackViewMean').textContent='MEDIA TRAMO: '+Math.round(activeTrackRun?.currentSegmentAverageKmh||latestSplit?.averageSpeedKmh||0)+' KM/H';
@@ -681,7 +722,7 @@
     updateTrackViewClock();
   }
 
-  const trackTimeScroller={offset:0,maxOffset:0,rowHeight:28,top:500,bottom:644,x:1448,viewportHeight:147,contentHeight:147};
+  const trackTimeScroller={offset:0,maxOffset:0,rowHeight:28,top:510,bottom:654,x:1448,viewportHeight:147,contentHeight:147};
   function setTrackTimeScroll(value) {
     const state=trackTimeScroller;
     state.offset=clamp(value,0,state.maxOffset);
@@ -979,8 +1020,8 @@
     renderResultFilterLabel();
   }
   const dropdownConfig = {
-    lap:{group:'lapTrackOptions',clip:'url(#lapTrackOptionsClip)',x:105,y:365,width:540,height:330,rowHeight:36,kind:'lap'},
-    results:{group:'resultsFilterOptions',clip:'url(#resultsFilterOptionsClip)',x:1088,y:376,width:428,height:330,rowHeight:34,kind:'results'}
+    lap:{group:'lapTrackOptions',clip:'url(#lapTrackOptionsClip)',x:105,y:365,width:540,height:330,rowHeight:40,kind:'lap'},
+    results:{group:'resultsFilterOptions',clip:'url(#resultsFilterOptionsClip)',x:1088,y:376,width:428,height:330,rowHeight:40,kind:'results'}
   };
   function closeTrackDropdown(kind) {
     const config = dropdownConfig[kind];
@@ -994,6 +1035,7 @@
   function renderTrackPickers() {
     const track = tracks.find(item => item.id === selectedLapPickerId);
     $('lapTrackSelectLabel').textContent = track ? track.name : 'SELECCIONAR TRACK';
+    $('lapTrackSelectLabel').classList.toggle('has-track-name',!!track);
     $('lapTrackSelectLabel').removeAttribute('textLength'); $('lapTrackSelectLabel').removeAttribute('lengthAdjust');
     setDisabled('lapTrackLoad',!track);
     $('lapTrackLoad').setAttribute('aria-label',track ? 'Cargar ' + track.name + ' en Lap Time' : 'Selecciona un track para cargar');
@@ -1485,6 +1527,7 @@
   buildGauge();
   setupTrackScrollers();
   setupTrackTimeScroller();
+  setupManualLapScroller();
   setupDropdownInteractions();
   updateSettingsView();
   renderLaps(); renderTrackDraft(); renderTrackList(); renderTrackResults(); renderTrackPickers(); renderHistory();

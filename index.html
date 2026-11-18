@@ -42,7 +42,8 @@
         <clipPath id="trackListClip"><rect x="584" y="371" width="438" height="336"/></clipPath>
         <clipPath id="trackResultsClip"><rect x="1086" y="410" width="432" height="297"/></clipPath>
         <clipPath id="lapTrackOptionsClip"><rect x="100" y="364" width="560" height="340"/></clipPath>
-        <clipPath id="trackTimeCheckpointClip"><rect x="120" y="497" width="1315" height="147"/></clipPath>
+        <clipPath id="trackTimeCheckpointClip"><rect x="120" y="507" width="1315" height="147"/></clipPath>
+        <clipPath id="manualLapListClip"><rect x="120" y="550" width="1325" height="154"/></clipPath>
         <clipPath id="resultsFilterOptionsClip"><rect x="1085" y="376" width="432" height="331"/></clipPath>
       </defs>
 
@@ -185,40 +186,42 @@
         <path d="M82 272H1558" stroke="#124b74" stroke-width="1.4"/>
         <path d="M40 744 64 768H1531L1558 740" fill="none" stroke="#087aff" stroke-opacity=".45" stroke-width="2"/>
         <g id="trackTimePanel">
-          <path d="M95 300 113 282H1482L1500 300V700L1483 717H112L95 700Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
-          <path d="M95 300 113 282H1482L1500 300V700L1483 717H112L95 700Z" fill="url(#carbon)" opacity=".1" pointer-events="none"/>
+          <path d="M95 314 113 296H1482L1500 314V710L1483 727H112L95 710Z" fill="url(#tileBlue)" stroke="#00bfff" stroke-width="2"/>
+          <path d="M95 314 113 296H1482L1500 314V710L1483 727H112L95 710Z" fill="url(#carbon)" opacity=".1" pointer-events="none"/>
           <g id="lapTrackPicker" class="track-picker">
-            <g id="lapTrackSelect" class="interactive track-select-button" role="button" tabindex="0" aria-expanded="false" aria-label="Seleccionar track para Track Time"><path d="M120 294H570L584 308V348H120Z" class="track-select-shape"/><text id="lapTrackSelectLabel" x="140" y="332" class="track-select-label">SELECCIONAR TRACK</text><path d="M540 309 554 323 568 309" class="track-select-arrow"/></g>
-            <g id="lapTrackLoad" class="interactive track-load-button" role="button" tabindex="0" aria-label="Cargar track seleccionado" aria-disabled="true"><path d="M600 294H730L744 308V348H600Z" class="track-load-shape"/><text x="672" y="333" text-anchor="middle" class="lap-action-label">CARGAR</text></g>
-            <g id="reverseTrack" class="interactive track-load-button" role="button" tabindex="0" aria-label="Invertir track" aria-disabled="true"><path d="M760 294H908L922 308V348H760Z" class="track-load-shape"/><text x="841" y="333" text-anchor="middle" class="lap-action-label">REVERSE</text></g>
+            <g id="lapTrackSelect" class="interactive track-select-button" role="button" tabindex="0" aria-expanded="false" aria-label="Seleccionar track para Track Time"><path d="M134 306H584V360H120V320Z" class="track-select-shape"/><text id="lapTrackSelectLabel" x="150" y="344" class="track-select-label">SELECCIONAR TRACK</text><path d="M540 321 554 335 568 321" class="track-select-arrow"/></g>
+            <g id="lapTrackLoad" class="interactive track-load-button" role="button" tabindex="0" aria-label="Cargar track seleccionado" aria-disabled="true"><path d="M614 306H744V360H600V320Z" class="track-load-shape"/><text x="672" y="345" text-anchor="middle" class="lap-action-label">CARGAR</text></g>
+            <g id="reverseTrack" class="interactive track-load-button" role="button" tabindex="0" aria-label="Invertir track" aria-disabled="true"><path d="M774 306H922V360H760V320Z" class="track-load-shape"/><text x="841" y="345" text-anchor="middle" class="lap-action-label">REVERSE</text></g>
           </g>
-          <text id="lapAutoStatus" x="140" y="395" class="page-label">CARGA UN TRACK PARA EMPEZAR</text>
-          <text id="trackTimeClock" x="1360" y="334" text-anchor="middle" class="track-clock-small">00:00.00</text>
+          <text id="lapAutoStatus" x="140" y="407" class="page-label">CARGA UN TRACK PARA EMPEZAR</text>
+          <text id="trackTimeClock" x="1360" y="346" text-anchor="middle" class="track-clock-small">00:00.00</text>
           <g id="lapTrackProgress" aria-label="Progreso de Track Time">
-            <path d="M1120 378H1460" class="lap-track-progress-base"/>
-            <path id="lapTrackProgressFill" d="M1120 378H1120" class="lap-track-progress-fill"/>
-            <path id="lapTrackProgressPointer" d="M1120 366 1111 354H1129Z" class="lap-track-progress-pointer"/>
+            <path d="M1120 390H1460" class="lap-track-progress-base"/>
+            <path id="lapTrackProgressFill" d="M1120 390H1120" class="lap-track-progress-fill"/>
+            <path id="lapTrackProgressPointer" d="M1120 378 1111 366H1129Z" class="lap-track-progress-pointer"/>
           </g>
-          <text id="trackTimeWaiting" x="1290" y="421" text-anchor="middle" class="page-label" style="display:none">ESPERANDO A START</text>
-          <text id="trackTimeLive" x="140" y="452" class="page-label">GPS · -- KM/H</text>
-          <text id="trackTimeSummary" x="800" y="452" text-anchor="middle" class="page-label">MEDIA DE TRAMO · -- KM/H</text>
-          <text x="1105" y="490" text-anchor="end" class="data-row-small">TIEMPO</text>
-          <text x="1410" y="490" text-anchor="end" class="data-row-small">VELOCIDAD</text>
+          <text id="trackTimeWaiting" x="1290" y="433" text-anchor="middle" class="page-label" style="display:none">ESPERANDO A START</text>
+          <text id="trackTimeLive" x="140" y="464" class="page-label">GPS · -- KM/H</text>
+          <text id="trackTimeSummary" x="800" y="464" text-anchor="middle" class="page-label">MEDIA DE TRAMO · -- KM/H</text>
+          <text x="1105" y="502" text-anchor="end" class="data-row-small">TIEMPO</text>
+          <text x="1410" y="502" text-anchor="end" class="data-row-small">VELOCIDAD</text>
           <g id="trackTimeCheckpointViewport" clip-path="url(#trackTimeCheckpointClip)" class="scroll-viewport"><g id="trackTimeCheckpointList"></g></g>
-          <path id="trackTimeScrollTrack" d="M1448 500V644" class="scrollbar-track"/>
-          <path id="trackTimeScrollThumb" d="M1448 500V644" class="scrollbar-thumb interactive" role="slider" tabindex="0" aria-label="Desplazar checkpoints" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"/>
-          <g id="lapTrackDeactivate" class="interactive lap-deactivate-button is-disabled" role="button" tabindex="0" aria-label="Desactivar track" aria-disabled="true"><path d="M1264 681 1280 653H1480L1468 681Z" class="lap-deactivate-shape"/><text x="1372" y="674" text-anchor="middle" class="lap-action-label">DESACTIVAR</text></g>
+          <path id="trackTimeScrollTrack" d="M1448 510V654" class="scrollbar-track"/>
+          <path id="trackTimeScrollThumb" d="M1448 510V654" class="scrollbar-thumb interactive" role="slider" tabindex="0" aria-label="Desplazar checkpoints" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"/>
+          <g id="lapTrackDeactivate" class="interactive lap-deactivate-button is-disabled" role="button" tabindex="0" aria-label="Desactivar track" aria-disabled="true"><path d="M1264 691 1280 663H1480L1468 691Z" class="lap-deactivate-shape"/><text x="1372" y="684" text-anchor="middle" class="lap-action-label">DESACTIVAR</text></g>
         </g>
         <g id="manualLapPanel" style="display:none">
-          <path d="M95 300 113 282H1482L1500 300V700L1483 717H112L95 700Z" fill="url(#tileBlue)" stroke="#1760ff" stroke-width="2"/>
-          <path d="M95 300 113 282H1482L1500 300V700L1483 717H112L95 700Z" fill="url(#carbon)" opacity=".1" pointer-events="none"/>
-          <text id="lapClock" x="797" y="425" text-anchor="middle" class="lap-clock">00:00.00</text>
-          <g id="lapStart" class="interactive svg-button" role="button" tabindex="0" aria-label="Iniciar cronómetro"><path d="M130 520 158 470H436L416 520H110Z" fill="url(#blueButton)" stroke="#08baff" stroke-width="2"/><text x="273" y="505" text-anchor="middle" class="button-text">INICIAR</text></g>
-          <g id="lapMark" class="interactive svg-button" role="button" tabindex="0" aria-label="Registrar vuelta"><path d="M470 470H776L756 520H450Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/><text x="613" y="505" text-anchor="middle" class="button-text button-dim">＋ VUELTA</text></g>
-          <g id="lapStop" class="interactive svg-button is-disabled" role="button" tabindex="0" aria-label="Detener cronómetro" aria-disabled="true"><path d="M810 470H1116L1096 520H790Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/><text x="953" y="505" text-anchor="middle" class="button-text button-dim">DETENER</text></g>
-          <g id="lapReset" class="interactive svg-button" role="button" tabindex="0" aria-label="Restablecer cronómetro"><path d="M1150 470H1480L1460 520H1130Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/><text x="1305" y="505" text-anchor="middle" class="button-text button-dim">RESET</text></g>
-          <text x="120" y="574" class="page-label">VUELTAS REGISTRADAS · TIEMPO ENTRE MARCAS</text>
-          <g id="lapList"></g>
+          <path d="M95 314 113 296H1482L1500 314V710L1483 727H112L95 710Z" fill="url(#tileBlue)" stroke="#1760ff" stroke-width="2"/>
+          <path d="M95 314 113 296H1482L1500 314V710L1483 727H112L95 710Z" fill="url(#carbon)" opacity=".1" pointer-events="none"/>
+          <text id="lapClock" x="797" y="406" text-anchor="middle" class="lap-clock">00:00.00</text>
+          <g id="lapStart" class="interactive svg-button" role="button" tabindex="0" aria-label="Iniciar cronómetro"><path d="M130 498 158 448H436L416 498H110Z" fill="url(#blueButton)" stroke="#08baff" stroke-width="2"/><text x="273" y="483" text-anchor="middle" class="button-text">INICIAR</text></g>
+          <g id="lapMark" class="interactive svg-button" role="button" tabindex="0" aria-label="Registrar vuelta"><path d="M470 448H776L756 498H450Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/><text x="613" y="483" text-anchor="middle" class="button-text button-dim">＋ VUELTA</text></g>
+          <g id="lapStop" class="interactive svg-button is-disabled" role="button" tabindex="0" aria-label="Detener cronómetro" aria-disabled="true"><path d="M810 448H1116L1096 498H790Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/><text x="953" y="483" text-anchor="middle" class="button-text button-dim">DETENER</text></g>
+          <g id="lapReset" class="interactive svg-button" role="button" tabindex="0" aria-label="Restablecer cronómetro"><path d="M1150 448H1480L1460 498H1130Z" fill="url(#darkButton)" stroke="#155d98" stroke-width="2"/><text x="1305" y="483" text-anchor="middle" class="button-text button-dim">RESET</text></g>
+          <text x="120" y="535" class="page-label">VUELTAS REGISTRADAS · TIEMPO ENTRE MARCAS</text>
+          <g id="lapListViewport" clip-path="url(#manualLapListClip)" class="scroll-viewport"><g id="lapList"></g></g>
+          <path id="manualLapScrollTrack" d="M1478 550V704" class="scrollbar-track"/>
+          <path id="manualLapScrollThumb" d="M1478 550V704" class="scrollbar-thumb interactive" role="slider" tabindex="0" aria-label="Desplazar vueltas registradas" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"/>
         </g>
         <g id="lapPanelTrackTab" class="interactive lap-panel-tab is-active" role="button" tabindex="0" aria-pressed="true"><path d="M95 225H786L798 237V268H95Z" class="lap-panel-tab-shape"/><text x="440" y="263" text-anchor="middle" class="panel-title">TRACK TIME</text></g>
         <g id="lapPanelManualTab" class="interactive lap-panel-tab" role="button" tabindex="0" aria-pressed="false"><path d="M810 225H1500L1512 237V268H810Z" class="lap-panel-tab-shape"/><text x="1160" y="263" text-anchor="middle" class="panel-title">LAP TIME</text></g>

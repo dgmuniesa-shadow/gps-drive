@@ -57,7 +57,7 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .page-small{fill:#7798b5;font-size:20px;font-weight:900;letter-spacing:.55px;stroke:#7798b5;stroke-width:.35px}
 .page-value{fill:#f2f6fb;font-size:32px;font-weight:1000;letter-spacing:.4px;stroke:#f2f6fb;stroke-width:.55px}
 .page-value-small{font-size:28px}
-.lap-clock{fill:#f4f7fc;font-size:132px;font-weight:1000;letter-spacing:-3px;stroke:#f4f7fc;stroke-width:1px}
+.lap-clock{fill:#f4f7fc;font-size:112px;font-weight:1000;letter-spacing:-2.5px;stroke:#f4f7fc;stroke-width:.8px}
 .track-clock-small{fill:#f4f7fc;font-size:54px;font-weight:1000;letter-spacing:-1px;stroke:#f4f7fc;stroke-width:.5px}
 .lap-action-label{fill:#e5f5ff;font-size:22px;font-weight:1000;letter-spacing:.45px;stroke:#e5f5ff;stroke-width:.35px;pointer-events:none}
 .lap-track-progress-base{fill:none;stroke:#174361;stroke-width:7;stroke-linecap:round;opacity:.72}
@@ -95,6 +95,7 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .track-select-shape{fill:#04182c;fill-opacity:.94;stroke:#1676b5;stroke-width:1.7}
 .track-select-button:hover .track-select-shape,.track-select-button:focus-visible .track-select-shape{fill:#08436d;stroke:#31caff;filter:drop-shadow(0 0 4px #08aaff)}
 .track-select-label{fill:#c0d7e8;font-size:17px;font-weight:950;letter-spacing:.35px;stroke:#c0d7e8;stroke-width:.25px;pointer-events:none}
+.track-select-label.has-track-name{fill:#c9dce9;font-size:25px;font-weight:950;letter-spacing:.7px;stroke:#c9dce9;stroke-width:.35px}
 .track-select-arrow{fill:none;stroke:#43caff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .track-load-button{cursor:pointer}
 .track-load-shape{fill:url(#blueButton);stroke:#0bbcff;stroke-width:1.7}
@@ -105,7 +106,7 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .track-dropdown-option-shape{fill:#061a30;fill-opacity:.97;stroke:#174363;stroke-width:1}
 .track-dropdown-option:hover .track-dropdown-option-shape,.track-dropdown-option:focus-visible .track-dropdown-option-shape{fill:#07518a;stroke:#2acaff}
 .track-dropdown-option-shape.is-current{fill:#0a3c63;stroke:#168fd0}
-.track-dropdown-option-label{fill:#d2e6f4;font-size:16px;font-weight:850;letter-spacing:.2px;pointer-events:none}
+.track-dropdown-option-label{fill:#c9dce9;font-size:25px;font-weight:950;letter-spacing:.7px;stroke:#c9dce9;stroke-width:.35px;pointer-events:none}
 .track-dropdown-scroll{fill:none;stroke:#16a9ee;stroke-width:5;stroke-linecap:round;opacity:.85;pointer-events:none}
 .result-incomplete{fill:#ff5265;stroke:#ff5265}
 .track-confirm-message{fill:#c8deed;font-size:28px;font-weight:1000;letter-spacing:.25px;stroke:#c8deed;stroke-width:.35px}
