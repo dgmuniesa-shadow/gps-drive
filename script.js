@@ -460,7 +460,8 @@
     activeTrackRun = {
       trackId:track.id,reverse:activeTrackReverse,startedAt:timestamp,startDistanceKm:distanceKm,
       distanceKm:0,progressKm:0,maxSpeed:speed,samples:[],checkpointSplits:[{markIndex:activeTrackReverse?track.marks.length-1:0,
-        type:'START',timestamp,elapsedMs:0,segmentTimeMs:0,segmentDistanceKm:0,averageSpeedKmh:0}],nextCheckpoint:1,lastCheckpointAt:timestamp,
+        type:'START',timestamp,elapsedMs:0,segmentTimeMs:0,segmentDistanceKm:0,averageSpeedKmh:0,
+        speedKmh:position?.speed == null ? speed : Number(position.speed)}],nextCheckpoint:1,lastCheckpointAt:timestamp,
       lastCheckpointDistanceKm:0,finishArmed:skipStart || false
     };
     clearInterval(trackClockTimer); trackClockTimer=setInterval(updateTrackViewClock,30);
@@ -473,7 +474,7 @@
   function beginCountdown() {
     if (!gpsActive || !getActiveTrack() || activeTrackRun || countdownRunning) return;
     countdownRunning = true;
-    const hud = $('driveCountdownHud');
+      const hud = $('driveCountdownHud');
     setDisabled('countdownButton',true);
     const sequence = ['3','2','1','GO!'];
     let index = 0;
@@ -616,11 +617,20 @@
     $('lapAutoStatus').textContent=track ? (run
       ? (gpsFixAvailable?'MEDICIÓN EN CURSO · ':'GPS PERDIDO · VUELTA ABIERTA · ')+track.name
       : 'TRACK CARGADO · '+track.name) : 'SELECCIONA UN TRACK PARA TRACK TIME';
+    const waiting=$('trackTimeWaiting');
+    waiting.style.display=track && !run ? 'inline' : 'none';
     const list=$('trackTimeCheckpointList'); list.replaceChildren();
-    if(record && Array.isArray(record.checkpointSplits)) record.checkpointSplits.slice(-4).forEach((cp,index)=>{
-      const y=500+index*25;
-      list.append(textNode(130,y,cp.type+' · VUELTA '+formatLap(Number(cp.elapsedMs)||0)+' · TRAMO '+formatLap(Number(cp.segmentTimeMs)||0)+' · MEDIA '+Math.round(Number(cp.averageSpeedKmh)||0)+' KM/H','data-row-small'));
+    const splits=record && Array.isArray(record.checkpointSplits) ? record.checkpointSplits : [];
+    splits.forEach((cp,index)=>{
+      const y=522+index*28;
+      const row=makeSvg('g'); row.setAttribute('class','track-time-checkpoint-row');
+      row.append(textNode(140,y,String(index+1).padStart(2,'0')+' · '+(cp.type||'CHECKPOINT'),'data-row-small'));
+      row.append(textNode(1105,y,formatLap(Number(cp.elapsedMs)||0),'data-row-small','end'));
+      const measured=Number(cp.speedKmh);
+      row.append(textNode(1410,y,Number.isFinite(measured)?measured.toFixed(1)+' KM/H':'-- KM/H','data-row-small','end'));
+      list.append(row);
     });
+    updateTrackTimeScroller(splits.length*28+8);
     if(!run && record?.lapTimeMs) lastTrackTimeMs=Number(record.lapTimeMs)||lastTrackTimeMs;
     updateTrackViewClock();
   }
@@ -667,7 +677,49 @@
     $('trackViewMean').textContent='MEDIA TRAMO: '+Math.round(activeTrackRun?.currentSegmentAverageKmh||latestSplit?.averageSpeedKmh||0)+' KM/H';
     $('trackTimeLive').textContent='GPS · '+speed.toFixed(1)+' KM/H';
     $('trackTimeSummary').textContent='MEDIA DE TRAMO · '+Math.round(activeTrackRun?.currentSegmentAverageKmh||latestSplit?.averageSpeedKmh||0)+' KM/H';
+    $('trackTimeWaiting').style.display=track && !activeTrackRun ? 'inline' : 'none';
+    updateTrackTimeScroller((activeTrackRun?.checkpointSplits||latest?.checkpointSplits||[]).length*28+8);
     updateTrackViewClock();
+  }
+
+  const trackTimeScroller={offset:0,maxOffset:0,rowHeight:28,top:500,bottom:644,x:1448,viewportHeight:147,contentHeight:147};
+  function setTrackTimeScroll(value) {
+    const state=trackTimeScroller;
+    state.offset=clamp(value,0,state.maxOffset);
+    $('trackTimeCheckpointList').setAttribute('transform','translate(0 '+(-state.offset)+')');
+    updateTrackTimeScroller();
+  }
+  function updateTrackTimeScroller(totalHeight) {
+    const state=trackTimeScroller;
+    if(totalHeight!==undefined) state.contentHeight=Math.max(state.viewportHeight,totalHeight);
+    state.maxOffset=Math.max(0,state.contentHeight-state.viewportHeight);
+    state.offset=clamp(state.offset,0,state.maxOffset);
+    $('trackTimeCheckpointList').setAttribute('transform','translate(0 '+(-state.offset)+')');
+    const trackHeight=state.bottom-state.top;
+    const thumbHeight=state.maxOffset?Math.max(22,trackHeight*state.viewportHeight/state.contentHeight):trackHeight;
+    const thumbY=state.top+(state.maxOffset?state.offset/state.maxOffset*(trackHeight-thumbHeight):0);
+    const thumb=$('trackTimeScrollThumb');
+    thumb.setAttribute('d','M'+state.x+' '+thumbY+'V'+(thumbY+thumbHeight));
+    thumb.setAttribute('aria-valuemax',String(Math.ceil(state.maxOffset)));
+    thumb.setAttribute('aria-valuenow',String(Math.round(state.offset)));
+  }
+  function setupTrackTimeScroller() {
+    const viewport=$('trackTimeCheckpointViewport'),thumb=$('trackTimeScrollThumb');
+    const drag={startY:0,startOffset:0,active:false};
+    viewport.addEventListener('wheel',event=>{event.preventDefault();setTrackTimeScroll(trackTimeScroller.offset+event.deltaY);},{passive:false});
+    thumb.addEventListener('keydown',event=>{
+      const step=trackTimeScroller.rowHeight;
+      if(event.key==='ArrowDown'||event.key==='ArrowRight')setTrackTimeScroll(trackTimeScroller.offset+step);
+      else if(event.key==='ArrowUp'||event.key==='ArrowLeft')setTrackTimeScroll(trackTimeScroller.offset-step);
+      else if(event.key==='Home')setTrackTimeScroll(0);
+      else if(event.key==='End')setTrackTimeScroll(trackTimeScroller.maxOffset);
+      else return;
+      event.preventDefault();
+    });
+    thumb.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();const point=svgPointFromEvent(event);drag.startY=point?point.y:event.clientY;drag.startOffset=trackTimeScroller.offset;drag.active=true;if(thumb.setPointerCapture)thumb.setPointerCapture(event.pointerId);});
+    thumb.addEventListener('pointermove',event=>{if(!drag.active)return;const point=svgPointFromEvent(event),y=point?point.y:event.clientY;const range=(trackTimeScroller.bottom-trackTimeScroller.top)-Math.max(22,(trackTimeScroller.bottom-trackTimeScroller.top)*trackTimeScroller.viewportHeight/trackTimeScroller.contentHeight);if(range>0)setTrackTimeScroll(drag.startOffset+(y-drag.startY)/range*trackTimeScroller.maxOffset);});
+    thumb.addEventListener('pointerup',()=>{drag.active=false;});thumb.addEventListener('pointercancel',()=>{drag.active=false;});
+    updateTrackTimeScroller();
   }
 
   const trackScrollers = {
@@ -1189,6 +1241,7 @@
         active.checkpointSplits.push({markIndex:active.reverse?track.marks.length-1-expected:expected,
           type:mark.type,timestamp,elapsedMs:Math.max(0,timestamp-active.startedAt),
           segmentTimeMs:elapsed,segmentDistanceKm:travelled,averageSpeedKmh:average,
+          speedKmh:position.speed == null ? speed : Number(position.speed),
           latitude:position.latitude,longitude:position.longitude,accuracy:position.accuracy});
         active.currentSegmentAverageKmh=average;
         active.nextCheckpoint++;
@@ -1214,6 +1267,7 @@
     run.checkpointSplits.push({markIndex:run.reverse?0:track.marks.length-1,type:'FINISH',timestamp,
       elapsedMs:lapTimeMs,segmentTimeMs:finishElapsed,segmentDistanceKm:finishDistance,
       averageSpeedKmh:finishElapsed?finishDistance/(finishElapsed/3600000):0,
+      speedKmh:position.speed == null ? speed : Number(position.speed),
       latitude:position.latitude,longitude:position.longitude,accuracy:position.accuracy});
     const result={id:'result-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
       startedAt:run.startedAt,endedAt:timestamp,lapTimeMs,routeDistanceKm:traveled,completed:true,
@@ -1431,6 +1485,7 @@
 
   buildGauge();
   setupTrackScrollers();
+  setupTrackTimeScroller();
   setupDropdownInteractions();
   updateSettingsView();
   renderLaps(); renderTrackDraft(); renderTrackList(); renderTrackResults(); renderTrackPickers(); renderHistory();

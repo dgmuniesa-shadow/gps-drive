@@ -13,10 +13,11 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .nav-type path:not(:first-child){filter:drop-shadow(0 3px 7px #000b)}
 .panel-title{fill:#98c7e8;font-size:36px;font-weight:1000;letter-spacing:1.4px;stroke:#98c7e8;stroke-width:.45px}
 .lap-panel-tab{cursor:pointer}
-.lap-panel-tab-shape{fill:#06182a;fill-opacity:.22;stroke:#194967;stroke-opacity:.38;stroke-width:1.2}
-.lap-panel-tab:not(.is-active) .panel-title{fill:#7798b5;stroke:#7798b5;opacity:.82}
-.lap-panel-tab.is-active .lap-panel-tab-shape{fill:#082746;fill-opacity:.48;stroke:#1684c7;stroke-opacity:.72}
-.lap-panel-tab:hover .lap-panel-tab-shape,.lap-panel-tab:focus-visible .lap-panel-tab-shape{fill-opacity:.55;stroke:#25a8e8;stroke-opacity:.8}
+.lap-panel-tab-shape{fill:#06182a;fill-opacity:.045;stroke:#194967;stroke-opacity:.12;stroke-width:1}
+.lap-panel-tab .panel-title{stroke:none;paint-order:normal}
+.lap-panel-tab:not(.is-active) .panel-title{fill:#7798b5;opacity:.76}
+.lap-panel-tab.is-active .lap-panel-tab-shape{fill:#082746;fill-opacity:.11;stroke:#1684c7;stroke-opacity:.24}
+.lap-panel-tab:hover .lap-panel-tab-shape,.lap-panel-tab:focus-visible .lap-panel-tab-shape{fill-opacity:.17;stroke:#25a8e8;stroke-opacity:.4}
 .live-text{fill:#00f093;font-size:26px;font-weight:1000;letter-spacing:.9px;stroke:#00ef92;stroke-width:.45px}
 .gauge-label{fill:#f4f7ff;font-size:28px;font-weight:1000;stroke:#f4f7ff;stroke-width:.5px}
 .speed-value{fill:#f6f8fc;font-size:92px;font-weight:1000;letter-spacing:-3px;stroke:#fff;stroke-width:1px;filter:drop-shadow(0 2px 5px #d5e9ff55)}
