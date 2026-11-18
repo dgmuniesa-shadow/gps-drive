@@ -618,7 +618,7 @@
       : 'TRACK CARGADO · '+track.name) : 'SELECCIONA UN TRACK PARA TRACK TIME';
     const list=$('trackTimeCheckpointList'); list.replaceChildren();
     if(record && Array.isArray(record.checkpointSplits)) record.checkpointSplits.slice(-4).forEach((cp,index)=>{
-      const y=625+index*20;
+      const y=500+index*25;
       list.append(textNode(130,y,cp.type+' · VUELTA '+formatLap(Number(cp.elapsedMs)||0)+' · TRAMO '+formatLap(Number(cp.segmentTimeMs)||0)+' · MEDIA '+Math.round(Number(cp.averageSpeedKmh)||0)+' KM/H','data-row-small'));
     });
     if(!run && record?.lapTimeMs) lastTrackTimeMs=Number(record.lapTimeMs)||lastTrackTimeMs;
@@ -638,6 +638,7 @@
       gpsFixAvailable?'TRACK CARGADO · ESPERANDO START O COUNTDOWN':'ESPERANDO CONEXIÓN GPS';
     setDisabled('countdownButton',!track || !gpsFixAvailable || !!activeTrackRun || countdownRunning);
     setDisabled('reverseTrack',!track || !!activeTrackRun);
+    setDisabled('lapTrackDeactivate',!track);
     const marks=$('trackProgressMarks'); marks.replaceChildren();
     const total=getRouteDistanceKm(route)||1;
     let cumulative=0;
@@ -658,6 +659,9 @@
     const ratio=clamp(progress/total,0,1),x=445+1048*ratio;
     $('trackProgressFill').setAttribute('d','M445 722H'+x);
     $('trackProgressPointer').setAttribute('d','M'+x+' 702 '+(x-10)+' 688 '+(x+10)+' 688Z');
+    const lapX=1120+340*ratio;
+    $('lapTrackProgressFill').setAttribute('d','M1120 378H'+lapX);
+    $('lapTrackProgressPointer').setAttribute('d','M'+lapX+' 367 '+(lapX-8)+' 355 '+(lapX+8)+' 355Z');
     $('trackViewProgress').textContent=Math.round(ratio*100)+'%';
     const latestSplit=latest?.checkpointSplits?.[latest.checkpointSplits.length-1];
     $('trackViewMean').textContent='MEDIA TRAMO: '+Math.round(activeTrackRun?.currentSegmentAverageKmh||latestSplit?.averageSpeedKmh||0)+' KM/H';
@@ -1031,6 +1035,7 @@
     });
     bindButton('lapTrackLoad',() => { if (tracks.some(track => track.id === selectedLapPickerId)) selectTrack(selectedLapPickerId,false); });
     bindButton('reverseTrack',() => { if (tracks.some(track => track.id === selectedLapPickerId)) selectTrack(selectedLapPickerId,true); });
+    bindButton('lapTrackDeactivate',() => { const track=getActiveTrack(); if(track) openTrackConfirmation(track); });
     bindButton('resultsFilter',() => {
       if ($('resultsFilterOptions').style.display === 'inline') closeTrackDropdown('results'); else openTrackDropdown('results');
     });

@@ -57,6 +57,15 @@ svg text{font-family:var(--display);font-style:italic;font-weight:900;paint-orde
 .page-value{fill:#f2f6fb;font-size:32px;font-weight:1000;letter-spacing:.4px;stroke:#f2f6fb;stroke-width:.55px}
 .page-value-small{font-size:28px}
 .lap-clock{fill:#f4f7fc;font-size:132px;font-weight:1000;letter-spacing:-3px;stroke:#f4f7fc;stroke-width:1px}
+.track-clock-small{fill:#f4f7fc;font-size:54px;font-weight:1000;letter-spacing:-1px;stroke:#f4f7fc;stroke-width:.5px}
+.lap-action-label{fill:#e5f5ff;font-size:22px;font-weight:1000;letter-spacing:.45px;stroke:#e5f5ff;stroke-width:.35px;pointer-events:none}
+.lap-track-progress-base{fill:none;stroke:#174361;stroke-width:7;stroke-linecap:round;opacity:.72}
+.lap-track-progress-fill{fill:none;stroke:#1684c7;stroke-width:4;stroke-linecap:round;opacity:.86}
+.lap-track-progress-pointer{fill:#a8dfff;stroke:#1684c7;stroke-width:1.5;opacity:.9}
+.lap-deactivate-button{cursor:pointer}
+.lap-deactivate-button.is-disabled{pointer-events:none;opacity:.42}
+.lap-deactivate-shape{fill:#101b2b;fill-opacity:.8;stroke:#a6445d;stroke-opacity:.76;stroke-width:1.4}
+.lap-deactivate-button:hover .lap-deactivate-shape,.lap-deactivate-button:focus-visible .lap-deactivate-shape{fill:#361827;stroke:#fa536e;stroke-opacity:.9}
 .countdown-hud{font-size:840px;font-weight:1000;letter-spacing:-24px;stroke-width:7px;pointer-events:none;user-select:none}
 .setting-value{fill:#f6f8fc;font-size:92px;font-weight:1000;letter-spacing:-4px;stroke:#f6f8fc;stroke-width:1px}
 .toggle-track{stroke:#1d4e71;stroke-width:2;fill:#13263a}
