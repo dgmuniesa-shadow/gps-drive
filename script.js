@@ -478,9 +478,12 @@
     const sequence = ['3','2','1','GO!'];
     let index = 0;
     const tick = () => {
-      hud.textContent = sequence[index];
+      const value=sequence[index],isGo=value==='GO!',color=isGo?'#00f096':'#ff153d';
+      hud.textContent=value;
+      hud.setAttribute('fill',color); hud.setAttribute('stroke',color);
+      hud.setAttribute('filter',isGo?'url(#signalGlow)':'url(#redGlow)');
       hud.style.display = 'inline';
-      if (sequence[index] === 'GO!') {
+      if (isGo) {
         startTrackRun(Date.now(),true,lastPosition);
         countdownTimer = setTimeout(() => { hud.style.display = 'none'; countdownRunning = false; updateLapView(); },700);
         return;
@@ -565,6 +568,8 @@
     if (!showTrack && $('lapTrackOptions').style.display === 'inline') closeTrackDropdown('lap');
     $('trackTimePanel').style.display = showTrack ? 'inline' : 'none';
     $('manualLapPanel').style.display = showTrack ? 'none' : 'inline';
+    $('lapPanelTrackTab').classList.toggle('is-active',showTrack);
+    $('lapPanelManualTab').classList.toggle('is-active',!showTrack);
     $('lapPanelTrackTab').setAttribute('aria-pressed',String(showTrack));
     $('lapPanelManualTab').setAttribute('aria-pressed',String(!showTrack));
   }

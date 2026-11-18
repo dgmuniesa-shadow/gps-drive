@@ -113,7 +113,6 @@
         <g id="gaugeTicks" class="gauge-ticks" stroke="#f4f7fd" stroke-width="3"></g>
         <g id="gaugeLabels" class="gauge-labels"></g>
         <text id="speedNumber" x="601" y="415" text-anchor="middle" class="speed-value">0</text>
-        <text id="driveCountdownHud" x="601" y="355" text-anchor="middle" class="lap-clock" style="display:none">3</text>
         <text x="601" y="442" text-anchor="middle" class="speed-unit">KM/H</text>
         <text x="760" y="395" text-anchor="start" class="meta-label">MAX <tspan id="maxInline">0</tspan> KM/H</text>
         <path d="M83 428H500" stroke="#173b58" stroke-width="1.3"/>
@@ -184,9 +183,8 @@
         <path d="M40 256 82 215H1558V740L1531 768H64L40 744Z" fill="#020d1c" fill-opacity=".96" stroke="url(#frameEdge)" stroke-width="3" filter="url(#deepShadow)"/>
         <path d="M82 272H1558" stroke="#124b74" stroke-width="1.4"/>
         <path d="M40 744 64 768H1531L1558 740" fill="none" stroke="#087aff" stroke-opacity=".45" stroke-width="2"/>
-        <text x="99" y="260" class="panel-title">LAP TIME</text>
-        <g id="lapPanelTrackTab" class="interactive track-select-button" role="button" tabindex="0" aria-pressed="true"><path d="M100 286H800V330H100Z" class="track-select-shape"/><text x="450" y="317" text-anchor="middle" class="track-select-label">TRACK TIME</text></g>
-        <g id="lapPanelManualTab" class="interactive track-select-button" role="button" tabindex="0" aria-pressed="false"><path d="M810 286H1510V330H810Z" class="track-select-shape"/><text x="1160" y="317" text-anchor="middle" class="track-select-label">LAP TIME</text></g>
+        <g id="lapPanelTrackTab" class="interactive lap-panel-tab is-active" role="button" tabindex="0" aria-pressed="true"><path d="M95 225H786L798 237V268H95Z" class="lap-panel-tab-shape"/><text x="440" y="263" text-anchor="middle" class="panel-title">TRACK TIME</text></g>
+        <g id="lapPanelManualTab" class="interactive lap-panel-tab" role="button" tabindex="0" aria-pressed="false"><path d="M810 225H1500L1512 237V268H810Z" class="lap-panel-tab-shape"/><text x="1160" y="263" text-anchor="middle" class="panel-title">LAP TIME</text></g>
         <g id="trackTimePanel">
           <path d="M95 345H1500V700H95Z" fill="#06162a" stroke="#194967" stroke-width="2"/>
           <text id="lapAutoStatus" x="800" y="390" text-anchor="middle" class="page-label">CARGA UN TRACK PARA EMPEZAR</text>
@@ -330,6 +328,7 @@
         <text id="keyboardMessage" x="800" y="657" text-anchor="middle" class="keyboard-message"></text>
         <g id="keyboardKeys"></g>
       </g>
+      <text id="driveCountdownHud" x="800" y="700" text-anchor="middle" class="countdown-hud" role="status" aria-live="assertive" style="display:none" fill="#ff153d" stroke="#ff153d" filter="url(#redGlow)">3</text>
     </svg>
   </main>
   <script src="script.js"></script>
